@@ -11,7 +11,7 @@ const uploadSchema = z.object({
       storedName: z.string().min(1).max(255),
       label: z.string().max(100).default("mobile"),
     })
-  ).max(5000),
+  ).max(50000),
 });
 
 const searchSchema = z.object({
@@ -20,22 +20,30 @@ const searchSchema = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/contacts/upload", async (req: Request, res: Response) => {
-    const parsed = uploadSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() });
+    try {
+      const parsed = uploadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        console.error("Upload validation error:", JSON.stringify(parsed.error.flatten()));
+        return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() });
+      }
+
+      const { uploaderPhone, contacts } = parsed.data;
+      console.log(`Uploading ${contacts.length} contacts from ${uploaderPhone}`);
+
+      const items = contacts.map((c) => ({
+        uploaderPhone,
+        storedNumber: c.storedNumber.replace(/\D/g, ""),
+        storedName: c.storedName,
+        label: c.label,
+      })).filter((c) => c.storedNumber.length >= 5);
+
+      const count = await upsertContacts(items);
+      console.log(`Successfully uploaded ${count} contacts`);
+      return res.json({ uploaded: count });
+    } catch (err) {
+      console.error("Upload error:", err);
+      return res.status(500).json({ error: "Server error during upload" });
     }
-
-    const { uploaderPhone, contacts } = parsed.data;
-
-    const items = contacts.map((c) => ({
-      uploaderPhone,
-      storedNumber: c.storedNumber.replace(/\D/g, ""),
-      storedName: c.storedName,
-      label: c.label,
-    })).filter((c) => c.storedNumber.length >= 5);
-
-    const count = await upsertContacts(items);
-    return res.json({ uploaded: count });
   });
 
   app.get("/api/contacts/search", async (req: Request, res: Response) => {

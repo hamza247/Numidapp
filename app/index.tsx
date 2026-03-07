@@ -119,15 +119,17 @@ export default function HomeScreen() {
 
     const items: Array<{ storedNumber: string; storedName: string; label: string }> = [];
     for (const contact of data) {
-      const name = contact.name || contact.firstName || contact.lastName || "";
+      const name = (contact.name || contact.firstName || contact.lastName || "").trim();
       if (!name || !contact.phoneNumbers) continue;
       for (const ph of contact.phoneNumbers) {
         const raw = ph.number?.replace(/\D/g, "") ?? "";
         if (raw.length < 5) continue;
+        let label = (ph.label ?? "mobile").replace(/[_$!<>]/g, "").trim() || "mobile";
+        if (label.length > 50) label = label.slice(0, 50);
         items.push({
           storedNumber: raw,
-          storedName: name,
-          label: ph.label ?? "mobile",
+          storedName: name.slice(0, 200),
+          label,
         });
       }
     }
@@ -147,9 +149,10 @@ export default function HomeScreen() {
       setSynced(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Synced!", `${items.length} contacts uploaded. Others can now find who saved their numbers.`);
-    } catch (e) {
+    } catch (e: any) {
+      console.error("Sync error:", e?.message || e);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Sync Failed", "Please check your connection and try again.");
+      Alert.alert("Sync Failed", `Error: ${e?.message || "Please check your connection and try again."}`);
     } finally {
       setSyncing(false);
     }
