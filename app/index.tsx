@@ -24,7 +24,7 @@ import { apiRequest, getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import CountryPicker from "@/components/CountryPicker";
 import { countries, type Country } from "@/lib/countries";
-import { useCoins } from "@/lib/coins";
+import { useCoins, FREE_DAILY_SEARCHES, SEARCH_COST } from "@/lib/coins";
 
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
@@ -39,7 +39,7 @@ export default function HomeScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
-  const { coins } = useCoins();
+  const { coins, freeSearchesRemaining, spendSearch, loaded: coinsLoaded } = useCoins();
 
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -252,6 +252,36 @@ export default function HomeScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+
+    if (!coinsLoaded) return;
+
+    if (freeSearchesRemaining <= 0 && coins < SEARCH_COST) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        "No Searches Left",
+        `You've used all ${FREE_DAILY_SEARCHES} free searches today and don't have enough coins. Each extra search costs ${SEARCH_COST} coin.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Buy Coins", onPress: () => router.push("/store") },
+        ]
+      );
+      return;
+    }
+
+    const result = await spendSearch();
+    if (!result.allowed) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        "Not Enough Coins",
+        `Each search costs ${SEARCH_COST} coin. You currently have ${coins} coins.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Buy Coins", onPress: () => router.push("/store") },
+        ]
+      );
+      return;
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Keyboard.dismiss();
 
@@ -486,6 +516,14 @@ export default function HomeScreen() {
               <Ionicons name="search" size={22} color="#000" />
             </Pressable>
           </View>
+          <View style={styles.searchQuotaRow}>
+            <Ionicons name="search-outline" size={12} color={freeSearchesRemaining > 0 ? theme.tint : "#FFD700"} />
+            <Text style={[styles.searchQuotaText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              {freeSearchesRemaining > 0
+                ? `${freeSearchesRemaining} free search${freeSearchesRemaining === 1 ? "" : "es"} left today`
+                : `${SEARCH_COST} coin per search`}
+            </Text>
+          </View>
         </Animated.View>
 
         {!synced && (
@@ -548,14 +586,8 @@ export default function HomeScreen() {
                       { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
                     ]}
                     onPress={() => {
-                      if (!synced) {
-                        performSearch(item.phone, c);
-                        return;
-                      }
-                      router.push({
-                        pathname: "/results",
-                        params: { phone: item.phone, countryCode: item.country, localNumber: item.phone },
-                      });
+                      const localDigits = item.phone.replace(c.dial.replace("+", ""), "");
+                      performSearch(localDigits, c);
                     }}
                   >
                     <Text style={styles.historyFlag}>{c.flag}</Text>
@@ -731,6 +763,16 @@ const styles = StyleSheet.create({
   searchSection: {
     paddingHorizontal: 20,
     marginBottom: 16,
+    gap: 8,
+  },
+  searchQuotaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 4,
+  },
+  searchQuotaText: {
+    fontSize: 12,
   },
   searchRow: {
     flexDirection: "row",

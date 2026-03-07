@@ -38,11 +38,11 @@ export async function upsertContacts(items: InsertContact[]): Promise<number> {
 
 export async function searchNumber(
   phoneNumber: string
-): Promise<Array<{ storedName: string; label: string; uploaderPhone: string }>> {
+): Promise<Array<{ storedName: string; label: string; uploaderName: string }>> {
   const normalized = normalizePhone(phoneNumber);
   const variants = getPhoneVariants(normalized);
 
-  const results: Array<{ storedName: string; label: string; uploaderPhone: string }> = [];
+  const results: Array<{ storedName: string; label: string; uploaderName: string }> = [];
   const seen = new Set<string>();
 
   for (const variant of variants) {
@@ -51,8 +51,10 @@ export async function searchNumber(
         storedName: contacts.storedName,
         label: contacts.label,
         uploaderPhone: contacts.uploaderPhone,
+        uploaderName: profiles.fullName,
       })
       .from(contacts)
+      .leftJoin(profiles, eq(contacts.uploaderPhone, profiles.phone))
       .where(eq(contacts.storedNumber, variant));
 
     for (const row of rows) {
@@ -62,7 +64,7 @@ export async function searchNumber(
         results.push({
           storedName: row.storedName,
           label: row.label ?? "mobile",
-          uploaderPhone: row.uploaderPhone,
+          uploaderName: row.uploaderName ?? "Unknown User",
         });
       }
     }

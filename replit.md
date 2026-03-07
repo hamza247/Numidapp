@@ -1,7 +1,7 @@
 # Who Saved Me
 
 ## Overview
-Mobile app (Expo + Express) that lets users search any phone number to discover which other users have that number saved in their contacts, what name they saved it under, what label they used, and which uploader's number it came from.
+Mobile app (Expo + Express) that lets users search any phone number to discover which other users have that number saved in their contacts, what name they saved it under, what label they used, and the uploader's full name.
 
 ## Architecture
 - **Frontend**: Expo (React Native) on port 8081
@@ -10,9 +10,9 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 
 ## Key Files
 - `app/index.tsx` - Home screen (onboarding + search + history)
-- `app/results.tsx` - Search results with coin-gated reveal
+- `app/results.tsx` - Search results showing uploader's full name
 - `app/_layout.tsx` - Root layout with providers (QueryClient, CoinsProvider)
-- `lib/coins.tsx` - Coin system context (5 initial coins, 1 per reveal, AsyncStorage persistence)
+- `lib/coins.tsx` - Coin system context (5 initial coins, daily search tracking, AsyncStorage persistence)
 - `lib/countries.ts` - Country list with flags and dial codes
 - `lib/query-client.ts` - React Query client and API helpers
 - `components/CountryPicker.tsx` - Country selector modal
@@ -27,10 +27,9 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 - Contact sync gate: users MUST upload contacts before searching (sync required)
 - Contact sync via expo-contacts (dedup before batch insert, 50k limit, 10MB body)
 - Search by phone number with country code (locked until contacts synced)
-- Results show: contact name, label badge (Mobile/Home/Work/etc), masked uploader phone
-- Coin system: 5 free coins, spend 1 to reveal full uploader phone number (server-side enforcement)
-- Reveal endpoint: POST /api/contacts/reveal with base64-encoded uploaderId
-- Coin balance displayed in header on home and results screens
+- Results show: contact name, label badge (Mobile/Home/Work/etc), uploader's full name (joined from profiles table)
+- Search limit: 5 free searches per day, then 1 coin per search
+- Coin system: 5 initial coins, coin balance displayed in header on home and results screens
 - Search history with country flags
 - Dark/light theme support
 
@@ -43,4 +42,4 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 ## Phone Number Handling
 - iOS contact labels sanitized: `.replace(/[_$!<>]/g, "")`
 - Variants handled: +1 prefix, 10-digit, 11-digit with/without country code
-- Uploader phone masked by default (last 4 digits visible), revealed with coin spend
+- Search results join contacts with profiles table to show uploader's full name

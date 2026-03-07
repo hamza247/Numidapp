@@ -8,7 +8,6 @@ import {
   useColorScheme,
   Platform,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -19,13 +18,12 @@ import Colors from "@/constants/colors";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import { countries, type Country } from "@/lib/countries";
-import { useCoins, REVEAL_COST } from "@/lib/coins";
+import { useCoins } from "@/lib/coins";
 
 interface SearchResult {
   storedName: string;
   label: string;
-  uploaderPhone: string;
-  uploaderId: string;
+  uploaderName: string;
 }
 
 function getLabelStyle(label: string, theme: typeof Colors.dark) {
@@ -66,35 +64,18 @@ function getAvatarColor(name: string, theme: typeof Colors.dark): string {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function formatFullPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length <= 4) return digits;
-  if (digits.length <= 7) return digits;
-  if (digits.length <= 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`;
-}
-
 function ResultCard({
   item,
   index: idx,
   theme,
-  revealedPhone,
-  onReveal,
-  coins,
-  revealing,
 }: {
   item: SearchResult;
   index: number;
   theme: typeof Colors.dark;
-  revealedPhone: string | null;
-  onReveal: () => void;
-  coins: number;
-  revealing: boolean;
 }) {
   const labelStyle = getLabelStyle(item.label, theme);
   const avatarColor = getAvatarColor(item.storedName, theme);
   const initials = getInitials(item.storedName);
-  const isRevealed = revealedPhone !== null;
 
   return (
     <Animated.View entering={FadeInDown.delay(idx * 50).duration(350).springify()}>
@@ -122,62 +103,11 @@ function ResultCard({
             </View>
           </View>
 
-          <View style={styles.phoneRevealRow}>
-            {isRevealed ? (
-              <View style={styles.revealedRow}>
-                <Ionicons name="call-outline" size={14} color={theme.tint} />
-                <Text style={[styles.revealedPhone, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>
-                  {formatFullPhone(revealedPhone)}
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.maskedRow}>
-                <Ionicons name="lock-closed-outline" size={13} color={theme.textMuted} />
-                <Text style={[styles.maskedPhone, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                  {item.uploaderPhone}
-                </Text>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.revealBtn,
-                    {
-                      backgroundColor: coins >= REVEAL_COST ? Colors.accent + "20" : theme.surface,
-                      borderColor: coins >= REVEAL_COST ? Colors.accent + "40" : theme.border,
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                  onPress={onReveal}
-                  disabled={revealing}
-                >
-                  {revealing ? (
-                    <ActivityIndicator size="small" color={Colors.accent} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="eye-outline"
-                        size={14}
-                        color={coins >= REVEAL_COST ? Colors.accent : theme.textMuted}
-                      />
-                      <Text
-                        style={[
-                          styles.revealBtnText,
-                          {
-                            color: coins >= REVEAL_COST ? Colors.accent : theme.textMuted,
-                            fontFamily: "Inter_600SemiBold",
-                          },
-                        ]}
-                      >
-                        {REVEAL_COST}
-                      </Text>
-                      <Ionicons
-                        name="diamond"
-                        size={12}
-                        color={coins >= REVEAL_COST ? "#FFD700" : theme.textMuted}
-                      />
-                    </>
-                  )}
-                </Pressable>
-              </View>
-            )}
+          <View style={styles.uploaderRow}>
+            <Ionicons name="person-outline" size={13} color={theme.textSecondary} />
+            <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              Saved by {item.uploaderName}
+            </Text>
           </View>
         </View>
       </View>
@@ -195,12 +125,11 @@ export default function ResultsScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
-  const { coins, spendCoin, isRevealed, getRevealedPhone, cacheRevealedPhone, loaded } = useCoins();
+  const { coins } = useCoins();
 
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [revealingId, setRevealingId] = useState<string | null>(null);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
@@ -229,52 +158,6 @@ export default function ResultsScreen() {
       setError("Failed to load results. Please try again.");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleReveal(uploaderId: string, revealKey: string) {
-    if (isRevealed(revealKey)) return;
-    if (!loaded) return;
-
-    if (coins < REVEAL_COST) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        "Not Enough Coins",
-        `You need ${REVEAL_COST} coin to reveal this number. You currently have ${coins} coins.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Buy Coins", onPress: () => router.push("/store") },
-        ]
-      );
-      return;
-    }
-
-    setRevealingId(revealKey);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      const spent = await spendCoin(revealKey);
-      if (!spent) {
-        Alert.alert("Not Enough Coins", "You don't have enough coins.");
-        return;
-      }
-
-      const base = getApiUrl();
-      const url = new URL("/api/contacts/reveal", base);
-      const res = await fetch(url.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uploaderPhone: uploaderId }),
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = (await res.json()) as { uploaderPhone: string };
-      await cacheRevealedPhone(revealKey, data.uploaderPhone);
-    } catch (e) {
-      Alert.alert("Error", "Failed to reveal number. Your coin has been refunded.");
-    } finally {
-      setRevealingId(null);
     }
   }
 
@@ -367,7 +250,7 @@ export default function ResultsScreen() {
       {!loading && !error && results.length > 0 && (
         <FlatList
           data={results}
-          keyExtractor={(item, idx) => `${item.uploaderId}-${item.storedName}-${idx}`}
+          keyExtractor={(item, idx) => `${item.uploaderName}-${item.storedName}-${idx}`}
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingTop: 8,
@@ -375,20 +258,13 @@ export default function ResultsScreen() {
             gap: 10,
           }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item, index }) => {
-            const revealKey = `${phone}__${item.uploaderId}`;
-            return (
-              <ResultCard
-                item={item}
-                index={index}
-                theme={theme}
-                revealedPhone={getRevealedPhone(revealKey)}
-                onReveal={() => handleReveal(item.uploaderId, revealKey)}
-                coins={coins}
-                revealing={revealingId === revealKey}
-              />
-            );
-          }}
+          renderItem={({ item, index }) => (
+            <ResultCard
+              item={item}
+              index={index}
+              theme={theme}
+            />
+          )}
           ListHeaderComponent={
             <Animated.View entering={FadeInDown.delay(0).duration(350)}>
               <View style={[styles.statsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -637,38 +513,13 @@ const styles = StyleSheet.create({
   labelSmallText: {
     fontSize: 11,
   },
-  phoneRevealRow: {
+  uploaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
     marginTop: 2,
   },
-  revealedRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  revealedPhone: {
-    fontSize: 15,
-    letterSpacing: 0.3,
-  },
-  maskedRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  maskedPhone: {
+  uploaderName: {
     fontSize: 13,
-    letterSpacing: 0.5,
-    flex: 1,
-  },
-  revealBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  revealBtnText: {
-    fontSize: 12,
   },
 });
