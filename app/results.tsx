@@ -241,7 +241,10 @@ export default function ResultsScreen() {
       Alert.alert(
         "Not Enough Coins",
         `You need ${REVEAL_COST} coin to reveal this number. You currently have ${coins} coins.`,
-        [{ text: "OK" }]
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Buy Coins", onPress: () => router.push("/store") },
+        ]
       );
       return;
     }
@@ -312,12 +315,15 @@ export default function ResultsScreen() {
           </Text>
         </View>
 
-        <View style={[styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40" }]}>
+        <Pressable
+          style={({ pressed }) => [styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40", opacity: pressed ? 0.7 : 1 }]}
+          onPress={() => router.push("/store")}
+        >
           <Ionicons name="diamond" size={14} color="#FFD700" />
           <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
             {coins}
           </Text>
-        </View>
+        </Pressable>
       </Animated.View>
 
       {loading && (

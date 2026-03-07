@@ -302,12 +302,15 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <View style={[styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40" }]}>
+            <Pressable
+              style={({ pressed }) => [styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40", opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => router.push("/store")}
+            >
               <Ionicons name="diamond" size={14} color="#FFD700" />
               <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
                 {coins}
               </Text>
-            </View>
+            </Pressable>
           <Pressable
             style={({ pressed }) => [
               styles.syncBtn,
