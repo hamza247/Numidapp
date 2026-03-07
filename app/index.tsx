@@ -323,7 +323,7 @@ export default function HomeScreen() {
             <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
               Full Name
             </Text>
-            <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: nameError ? theme.destructive : theme.border }]}>
+            <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: nameError ? theme.destructive : theme.border, width: "100%" }]}>
               <Ionicons name="person-outline" size={18} color={nameError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
