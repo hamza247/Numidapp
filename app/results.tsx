@@ -12,47 +12,39 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInLeft,
-  SlideInRight,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
+import { countries, type Country } from "@/lib/countries";
 
 interface SearchResult {
   storedName: string;
   label: string;
 }
 
-function formatPhoneDisplay(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  if (digits.length <= 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`;
-}
-
 function getLabelStyle(label: string, theme: typeof Colors.dark) {
   const l = label.toLowerCase();
   if (l.includes("mobile") || l.includes("cell")) {
-    return { bg: theme.labelMobile + "22", text: theme.labelMobile, icon: "phone-portrait-outline" as const };
+    return { bg: theme.labelMobile + "22", text: theme.labelMobile, icon: "phone-portrait-outline" as const, display: "Mobile" };
   }
   if (l.includes("home")) {
-    return { bg: theme.labelHome + "22", text: theme.labelHome, icon: "home-outline" as const };
+    return { bg: theme.labelHome + "22", text: theme.labelHome, icon: "home-outline" as const, display: "Home" };
   }
   if (l.includes("work") || l.includes("office")) {
-    return { bg: theme.labelWork + "22", text: theme.labelWork, icon: "briefcase-outline" as const };
+    return { bg: theme.labelWork + "22", text: theme.labelWork, icon: "briefcase-outline" as const, display: "Work" };
   }
-  return { bg: theme.labelOther + "22", text: theme.labelOther, icon: "ellipsis-horizontal-outline" as const };
+  if (l.includes("iphone")) {
+    return { bg: theme.labelMobile + "22", text: theme.labelMobile, icon: "phone-portrait-outline" as const, display: "iPhone" };
+  }
+  if (l.includes("main")) {
+    return { bg: theme.labelMobile + "22", text: theme.labelMobile, icon: "call-outline" as const, display: "Main" };
+  }
+  if (l.includes("other")) {
+    return { bg: theme.labelOther + "22", text: theme.labelOther, icon: "ellipsis-horizontal-outline" as const, display: "Other" };
+  }
+  return { bg: theme.labelOther + "22", text: theme.labelOther, icon: "pricetag-outline" as const, display: label };
 }
 
 function getInitials(name: string): string {
@@ -62,17 +54,21 @@ function getInitials(name: string): string {
 }
 
 function getAvatarColor(name: string, theme: typeof Colors.dark): string {
-  const colors = [
+  const palette = [
     theme.labelMobile,
     theme.labelHome,
     theme.labelWork,
     theme.tint,
+    "#FF6B6B",
+    "#51CF66",
+    "#FF922B",
+    "#CC5DE8",
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[Math.abs(hash) % colors.length];
+  return palette[Math.abs(hash) % palette.length];
 }
 
 function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: number; theme: typeof Colors.dark }) {
@@ -81,12 +77,10 @@ function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: nu
   const initials = getInitials(item.storedName);
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(idx * 60).duration(350).springify()}
-    >
+    <Animated.View entering={FadeInDown.delay(idx * 50).duration(350).springify()}>
       <View style={[styles.resultCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <View style={[styles.avatar, { backgroundColor: avatarColor + "28", borderColor: avatarColor + "40" }]}>
-          <Text style={[styles.avatarText, { color: avatarColor, fontFamily: "Inter_600SemiBold" }]}>
+        <View style={[styles.avatar, { backgroundColor: avatarColor + "20", borderColor: avatarColor + "35" }]}>
+          <Text style={[styles.avatarText, { color: avatarColor, fontFamily: "Inter_700Bold" }]}>
             {initials}
           </Text>
         </View>
@@ -98,15 +92,17 @@ function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: nu
           >
             {item.storedName}
           </Text>
-          <Text style={[styles.resultSub, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            Saved this number
-          </Text>
+          <View style={styles.resultMeta}>
+            <Ionicons name={labelStyle.icon} size={12} color={labelStyle.text} />
+            <Text style={[styles.resultLabel, { color: labelStyle.text, fontFamily: "Inter_500Medium" }]}>
+              Saved as {labelStyle.display}
+            </Text>
+          </View>
         </View>
 
         <View style={[styles.labelBadge, { backgroundColor: labelStyle.bg }]}>
-          <Ionicons name={labelStyle.icon} size={12} color={labelStyle.text} />
-          <Text style={[styles.labelText, { color: labelStyle.text, fontFamily: "Inter_500Medium" }]}>
-            {item.label}
+          <Text style={[styles.labelText, { color: labelStyle.text, fontFamily: "Inter_600SemiBold" }]}>
+            {labelStyle.display}
           </Text>
         </View>
       </View>
@@ -115,7 +111,11 @@ function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: nu
 }
 
 export default function ResultsScreen() {
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { phone, countryCode, localNumber } = useLocalSearchParams<{
+    phone: string;
+    countryCode: string;
+    localNumber: string;
+  }>();
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
@@ -128,10 +128,10 @@ export default function ResultsScreen() {
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
 
+  const country: Country = countries.find((c) => c.code === countryCode) ?? countries[0];
+
   useEffect(() => {
-    if (phone) {
-      loadResults(phone);
-    }
+    if (phone) loadResults(phone);
   }, [phone]);
 
   async function loadResults(phoneNumber: string) {
@@ -143,7 +143,7 @@ export default function ResultsScreen() {
       url.searchParams.set("phone", phoneNumber);
       const res = await fetch(url.toString(), { credentials: "include" });
       if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json() as { results: SearchResult[]; count: number };
+      const data = (await res.json()) as { results: SearchResult[]; count: number };
       setResults(data.results);
       if (data.results.length > 0) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -153,6 +153,12 @@ export default function ResultsScreen() {
     } finally {
       setLoading(false);
     }
+  }
+
+  const labelCounts: Record<string, number> = {};
+  for (const r of results) {
+    const style = getLabelStyle(r.label, theme);
+    labelCounts[style.display] = (labelCounts[style.display] ?? 0) + 1;
   }
 
   return (
@@ -175,21 +181,15 @@ export default function ResultsScreen() {
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Text style={[styles.headerNumber, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
-            {formatPhoneDisplay(phone ?? "")}
+          <View style={styles.headerPhoneRow}>
+            <Text style={styles.headerFlag}>{country.flag}</Text>
+            <Text style={[styles.headerNumber, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+              {country.dial} {localNumber ?? phone}
+            </Text>
+          </View>
+          <Text style={[styles.headerCountry, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            {country.name}
           </Text>
-          {!loading && (
-            <Animated.Text
-              entering={FadeIn.duration(300)}
-              style={[styles.headerCount, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}
-            >
-              {results.length === 0
-                ? "Not found in any contacts"
-                : results.length === 1
-                ? "Saved by 1 person"
-                : `Saved by ${results.length} people`}
-            </Animated.Text>
-          )}
         </View>
       </Animated.View>
 
@@ -226,7 +226,7 @@ export default function ResultsScreen() {
             Not Saved Yet
           </Text>
           <Text style={[styles.emptyBody, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            Nobody in our network has this number saved in their contacts. Ask more friends to sync their contacts.
+            Nobody in our network has this number saved in their contacts yet. Ask more friends to sync their contacts.
           </Text>
         </Animated.View>
       )}
@@ -246,23 +246,41 @@ export default function ResultsScreen() {
             <ResultCard item={item} index={index} theme={theme} />
           )}
           ListHeaderComponent={
-            results.length > 0 ? (
-              <Animated.View
-                entering={FadeInDown.delay(0).duration(350)}
-                style={[styles.summaryCard, { backgroundColor: theme.tint + "15", borderColor: theme.tint + "35" }]}
-              >
-                <View style={[styles.summaryIconWrap, { backgroundColor: theme.tint + "25" }]}>
-                  <Ionicons name="checkmark-circle" size={22} color={theme.tint} />
+            <Animated.View entering={FadeInDown.delay(0).duration(350)}>
+              <View style={[styles.statsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={[styles.statsMain, { borderBottomColor: theme.border }]}>
+                  <View style={[styles.statsIconWrap, { backgroundColor: theme.tint + "20" }]}>
+                    <Ionicons name="people" size={24} color={theme.tint} />
+                  </View>
+                  <View style={styles.statsTextWrap}>
+                    <Text style={[styles.statsCount, { color: theme.tint, fontFamily: "Inter_700Bold" }]}>
+                      {results.length}
+                    </Text>
+                    <Text style={[styles.statsLabel, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                      {results.length === 1 ? "person saved this number" : "people saved this number"}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={[styles.summaryText, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
-                  Found in{" "}
-                  <Text style={{ color: theme.tint, fontFamily: "Inter_700Bold" }}>
-                    {results.length}
-                  </Text>
-                  {" "}contact{results.length !== 1 ? "s" : ""}
-                </Text>
-              </Animated.View>
-            ) : null
+
+                <View style={styles.statsBreakdown}>
+                  {Object.entries(labelCounts).map(([label, count]) => {
+                    const ls = getLabelStyle(label.toLowerCase(), theme);
+                    return (
+                      <View key={label} style={styles.breakdownItem}>
+                        <View style={[styles.breakdownDot, { backgroundColor: ls.text }]} />
+                        <Text style={[styles.breakdownText, { color: theme.textSecondary, fontFamily: "Inter_500Medium" }]}>
+                          {count} as {label}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <Text style={[styles.detailsHeader, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+                CONTACTS DETAILS
+              </Text>
+            </Animated.View>
           }
         />
       )}
@@ -295,12 +313,21 @@ const styles = StyleSheet.create({
     paddingTop: 2,
     gap: 4,
   },
+  headerPhoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerFlag: {
+    fontSize: 22,
+  },
   headerNumber: {
-    fontSize: 24,
+    fontSize: 22,
     letterSpacing: 0.3,
   },
-  headerCount: {
-    fontSize: 14,
+  headerCountry: {
+    fontSize: 13,
+    marginLeft: 30,
   },
   loadingContainer: {
     flex: 1,
@@ -358,24 +385,59 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  summaryCard: {
+  statsCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 16,
+  },
+  statsMain: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-    marginBottom: 4,
+    padding: 16,
+    gap: 14,
+    borderBottomWidth: 1,
   },
-  summaryIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+  statsIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
-  summaryText: {
-    fontSize: 15,
+  statsTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  statsCount: {
+    fontSize: 28,
+  },
+  statsLabel: {
+    fontSize: 14,
+  },
+  statsBreakdown: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: 14,
+    gap: 16,
+  },
+  breakdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  breakdownDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  breakdownText: {
+    fontSize: 13,
+  },
+  detailsHeader: {
+    fontSize: 12,
+    letterSpacing: 0.8,
+    marginBottom: 8,
   },
   resultCard: {
     flexDirection: "row",
@@ -386,8 +448,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 46,
-    height: 46,
+    width: 48,
+    height: 48,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
@@ -398,24 +460,25 @@ const styles = StyleSheet.create({
   },
   resultInfo: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
   resultName: {
     fontSize: 16,
   },
-  resultSub: {
-    fontSize: 13,
-  },
-  labelBadge: {
+  resultMeta: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+  },
+  resultLabel: {
+    fontSize: 12,
+  },
+  labelBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
   },
   labelText: {
     fontSize: 12,
-    textTransform: "capitalize",
   },
 });

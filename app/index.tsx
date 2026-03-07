@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -17,38 +17,19 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Contacts from "expo-contacts";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
-import { apiRequest, getApiUrl } from "@/lib/query-client";
+import { apiRequest } from "@/lib/query-client";
+import CountryPicker from "@/components/CountryPicker";
+import { countries, type Country } from "@/lib/countries";
 
 const PHONE_KEY = "user_phone";
 const HISTORY_KEY = "search_history";
 const SYNCED_KEY = "contacts_synced";
+const COUNTRY_KEY = "selected_country";
 
-function formatPhoneDisplay(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  if (digits.length <= 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`;
-}
-
-function getLabelColor(label: string, theme: typeof Colors.dark): string {
-  const l = label.toLowerCase();
-  if (l.includes("mobile") || l.includes("cell")) return theme.labelMobile;
-  if (l.includes("home")) return theme.labelHome;
-  if (l.includes("work")) return theme.labelWork;
-  return theme.labelOther;
-}
+const defaultCountry = countries[0];
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -59,42 +40,60 @@ export default function HomeScreen() {
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [onboardingPhone, setOnboardingPhone] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<Array<{ phone: string; country: string }>>([]);
   const [synced, setSynced] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(defaultCountry);
+  const [searchCountry, setSearchCountry] = useState<Country>(defaultCountry);
   const inputRef = useRef<TextInput>(null);
-
-  const searchScale = useSharedValue(1);
-  const searchAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: searchScale.value }],
-  }));
 
   useEffect(() => {
     loadData();
   }, []);
 
   async function loadData() {
-    const [phone, historyStr, syncedVal] = await Promise.all([
+    const [phone, historyStr, syncedVal, countryCode] = await Promise.all([
       AsyncStorage.getItem(PHONE_KEY),
       AsyncStorage.getItem(HISTORY_KEY),
       AsyncStorage.getItem(SYNCED_KEY),
+      AsyncStorage.getItem(COUNTRY_KEY),
     ]);
     setUserPhone(phone);
-    if (historyStr) setHistory(JSON.parse(historyStr));
+    if (historyStr) {
+      try {
+        const parsed = JSON.parse(historyStr);
+        if (Array.isArray(parsed)) {
+          if (typeof parsed[0] === "string") {
+            setHistory(parsed.map((p: string) => ({ phone: p, country: "US" })));
+          } else {
+            setHistory(parsed);
+          }
+        }
+      } catch {}
+    }
     setSynced(syncedVal === "true");
+    if (countryCode) {
+      const found = countries.find((c) => c.code === countryCode);
+      if (found) {
+        setSelectedCountry(found);
+        setSearchCountry(found);
+      }
+    }
     setLoading(false);
   }
 
   async function saveUserPhone() {
     const digits = onboardingPhone.replace(/\D/g, "");
-    if (digits.length < 7) {
+    if (digits.length < 5) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await AsyncStorage.setItem(PHONE_KEY, digits);
-    setUserPhone(digits);
+    const fullNumber = selectedCountry.dial.replace("+", "") + digits;
+    await AsyncStorage.setItem(PHONE_KEY, fullNumber);
+    await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
+    setUserPhone(fullNumber);
   }
 
   async function syncContacts() {
@@ -148,7 +147,7 @@ export default function HomeScreen() {
       await AsyncStorage.setItem(SYNCED_KEY, "true");
       setSynced(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Synced!", `${items.length} contacts uploaded. Others can now find who saved their numbers.`);
+      Alert.alert("Synced!", `${items.length} contacts uploaded successfully.`);
     } catch (e: any) {
       console.error("Sync error:", e?.message || e);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -158,20 +157,27 @@ export default function HomeScreen() {
     }
   }
 
-  async function performSearch(phone?: string) {
-    const target = (phone ?? searchPhone).replace(/\D/g, "");
-    if (target.length < 5) {
+  async function performSearch(phone?: string, countryOverride?: Country) {
+    const digits = (phone ?? searchPhone).replace(/\D/g, "");
+    if (digits.length < 5) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Keyboard.dismiss();
 
-    const newHistory = [target, ...history.filter((h) => h !== target)].slice(0, 10);
+    const c = countryOverride ?? searchCountry;
+    const fullNumber = c.dial.replace("+", "") + digits;
+
+    const entry = { phone: fullNumber, country: c.code };
+    const newHistory = [entry, ...history.filter((h) => h.phone !== fullNumber)].slice(0, 10);
     setHistory(newHistory);
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
 
-    router.push({ pathname: "/results", params: { phone: target } });
+    router.push({
+      pathname: "/results",
+      params: { phone: fullNumber, countryCode: c.code, localNumber: digits },
+    });
   }
 
   async function clearHistory() {
@@ -189,6 +195,10 @@ export default function HomeScreen() {
     setUserPhone(null);
     setSynced(false);
     setOnboardingPhone("");
+  }
+
+  function getCountryForHistory(code: string): Country {
+    return countries.find((c) => c.code === code) ?? defaultCountry;
   }
 
   if (loading) {
@@ -217,20 +227,22 @@ export default function HomeScreen() {
             Discover who has your number saved in their contacts, and what name they gave you.
           </Text>
 
-          <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Ionicons name="call-outline" size={20} color={theme.textMuted} style={styles.inputIcon} />
-            <TextInput
-              ref={inputRef}
-              style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-              placeholder="Your phone number"
-              placeholderTextColor={theme.textMuted}
-              keyboardType="phone-pad"
-              value={formatPhoneDisplay(onboardingPhone)}
-              onChangeText={(t) => setOnboardingPhone(t.replace(/\D/g, ""))}
-              returnKeyType="done"
-              onSubmitEditing={saveUserPhone}
-              maxLength={20}
-            />
+          <View style={[styles.inputRow, { marginTop: 8 }]}>
+            <CountryPicker selected={selectedCountry} onSelect={setSelectedCountry} />
+            <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <TextInput
+                ref={inputRef}
+                style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                placeholder="Phone number"
+                placeholderTextColor={theme.textMuted}
+                keyboardType="phone-pad"
+                value={onboardingPhone}
+                onChangeText={(t) => setOnboardingPhone(t.replace(/\D/g, ""))}
+                returnKeyType="done"
+                onSubmitEditing={saveUserPhone}
+                maxLength={15}
+              />
+            </View>
           </View>
 
           <Text style={[styles.inputHint, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
@@ -299,39 +311,40 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View style={styles.searchSection} entering={FadeInDown.delay(80).duration(400)}>
-          <View style={[styles.searchCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Ionicons name="search" size={20} color={theme.textMuted} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-              placeholder="Enter a phone number"
-              placeholderTextColor={theme.textMuted}
-              keyboardType="phone-pad"
-              value={formatPhoneDisplay(searchPhone)}
-              onChangeText={(t) => setSearchPhone(t.replace(/\D/g, ""))}
-              returnKeyType="search"
-              onSubmitEditing={() => performSearch()}
-              maxLength={20}
-            />
-            {searchPhone.length > 0 && (
-              <Pressable
-                onPress={() => setSearchPhone("")}
-                hitSlop={10}
-                style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
-              >
-                <Ionicons name="close-circle" size={20} color={theme.textMuted} />
-              </Pressable>
-            )}
+          <View style={styles.searchRow}>
+            <CountryPicker selected={searchCountry} onSelect={setSearchCountry} />
+            <View style={[styles.searchCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <TextInput
+                style={[styles.searchInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                placeholder="Phone number"
+                placeholderTextColor={theme.textMuted}
+                keyboardType="phone-pad"
+                value={searchPhone}
+                onChangeText={(t) => setSearchPhone(t.replace(/\D/g, ""))}
+                returnKeyType="search"
+                onSubmitEditing={() => performSearch()}
+                maxLength={15}
+              />
+              {searchPhone.length > 0 && (
+                <Pressable
+                  onPress={() => setSearchPhone("")}
+                  hitSlop={10}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                >
+                  <Ionicons name="close-circle" size={20} color={theme.textMuted} />
+                </Pressable>
+              )}
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.searchButton,
+                { backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 },
+              ]}
+              onPress={() => performSearch()}
+            >
+              <Ionicons name="search" size={22} color="#000" />
+            </Pressable>
           </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.searchButton,
-              { backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 },
-            ]}
-            onPress={() => performSearch()}
-          >
-            <Ionicons name="search" size={22} color="#000" />
-          </Pressable>
         </Animated.View>
 
         {!synced && (
@@ -369,28 +382,39 @@ export default function HomeScreen() {
               </Pressable>
             </View>
 
-            {history.map((item, idx) => (
-              <Animated.View
-                key={item}
-                entering={FadeInDown.delay(240 + idx * 40).duration(350)}
-              >
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.historyItem,
-                    { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
-                  ]}
-                  onPress={() => performSearch(item)}
+            {history.map((item, idx) => {
+              const c = getCountryForHistory(item.country);
+              return (
+                <Animated.View
+                  key={item.phone}
+                  entering={FadeInDown.delay(240 + idx * 40).duration(350)}
                 >
-                  <View style={[styles.historyIconWrap, { backgroundColor: theme.surface }]}>
-                    <Ionicons name="time-outline" size={16} color={theme.textMuted} />
-                  </View>
-                  <Text style={[styles.historyNumber, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
-                    {formatPhoneDisplay(item)}
-                  </Text>
-                  <Ionicons name="arrow-forward-outline" size={16} color={theme.textMuted} />
-                </Pressable>
-              </Animated.View>
-            ))}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.historyItem,
+                      { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                    onPress={() => {
+                      router.push({
+                        pathname: "/results",
+                        params: { phone: item.phone, countryCode: item.country, localNumber: item.phone },
+                      });
+                    }}
+                  >
+                    <Text style={styles.historyFlag}>{c.flag}</Text>
+                    <View style={styles.historyInfo}>
+                      <Text style={[styles.historyNumber, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
+                        {c.dial} {item.phone.replace(c.dial.replace("+", ""), "")}
+                      </Text>
+                      <Text style={[styles.historyCountry, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                        {c.name}
+                      </Text>
+                    </View>
+                    <Ionicons name="arrow-forward-outline" size={16} color={theme.textMuted} />
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
           </Animated.View>
         )}
 
@@ -413,9 +437,6 @@ export default function HomeScreen() {
         hitSlop={12}
       >
         <Feather name="settings" size={16} color={theme.textMuted} />
-        <Text style={[styles.resetText, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-          {formatPhoneDisplay(userPhone)}
-        </Text>
       </Pressable>
     </View>
   );
@@ -456,18 +477,19 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 8,
   },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
   inputCard: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderRadius: 14,
     paddingHorizontal: 16,
-    height: 56,
-    width: "100%",
-    marginTop: 8,
-  },
-  inputIcon: {
-    marginRight: 12,
+    height: 52,
   },
   phoneInput: {
     flex: 1,
@@ -521,10 +543,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   searchSection: {
-    flexDirection: "row",
     paddingHorizontal: 20,
-    gap: 10,
     marginBottom: 16,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   searchCard: {
     flex: 1,
@@ -533,10 +557,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 14,
     paddingHorizontal: 14,
-    height: 54,
-  },
-  searchIcon: {
-    marginRight: 10,
+    height: 52,
   },
   searchInput: {
     flex: 1,
@@ -544,11 +565,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   searchButton: {
-    width: 54,
-    height: 54,
+    width: 52,
+    height: 52,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    marginLeft: 8,
   },
   syncBanner: {
     flexDirection: "row",
@@ -603,17 +625,19 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
   },
-  historyIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+  historyFlag: {
+    fontSize: 24,
+  },
+  historyInfo: {
+    flex: 1,
+    gap: 2,
   },
   historyNumber: {
-    flex: 1,
     fontSize: 16,
     letterSpacing: 0.3,
+  },
+  historyCountry: {
+    fontSize: 12,
   },
   emptyState: {
     alignItems: "center",
@@ -628,11 +652,10 @@ const styles = StyleSheet.create({
   resetBtn: {
     position: "absolute",
     left: 20,
-    flexDirection: "row",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
-    gap: 6,
-  },
-  resetText: {
-    fontSize: 13,
+    justifyContent: "center",
   },
 });
