@@ -72,7 +72,8 @@ function getAvatarColor(name: string, theme: typeof Colors.dark): string {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function formatUploaderPhone(phone: string): string {
+function formatUploaderPhone(phone?: string): string {
+  if (!phone) return "Unknown";
   const digits = phone.replace(/\D/g, "");
   if (digits.length <= 6) return digits;
   const last4 = digits.slice(-4);
