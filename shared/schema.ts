@@ -45,3 +45,20 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const profiles = pgTable("profiles", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("full_name", { length: 100 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull().unique(),
+  countryCode: varchar("country_code", { length: 5 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProfileSchema = createInsertSchema(profiles).pick({
+  fullName: true,
+  phone: true,
+  countryCode: true,
+});
+
+export type InsertProfile = z.infer<typeof insertProfileSchema>;
+export type Profile = typeof profiles.$inferSelect;

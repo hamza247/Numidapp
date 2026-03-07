@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { upsertContacts, searchNumber } from "./storage";
+import { upsertContacts, searchNumber, createProfile, getProfileByPhone } from "./storage";
 import { z } from "zod";
 
 const uploadSchema = z.object({
@@ -22,6 +22,13 @@ const revealSchema = z.object({
   uploaderPhone: z.string().min(7).max(20),
 });
 
+const profileSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long")
+    .regex(/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/, "Name contains invalid characters"),
+  phone: z.string().min(7, "Phone number is too short").max(20, "Phone number is too long"),
+  countryCode: z.string().min(1).max(5),
+});
+
 function maskPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.length <= 4) return "****";
@@ -31,6 +38,38 @@ function maskPhone(phone: string): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.post("/api/profile", async (req: Request, res: Response) => {
+    try {
+      const parsed = profileSchema.safeParse(req.body);
+      if (!parsed.success) {
+        const errors = parsed.error.flatten();
+        return res.status(400).json({ error: "Invalid profile data", details: errors.fieldErrors });
+      }
+
+      const { fullName, phone, countryCode } = parsed.data;
+      const profile = await createProfile({ fullName, phone, countryCode });
+      return res.json({ profile });
+    } catch (err: any) {
+      if (err?.code === "23505") {
+        return res.status(409).json({ error: "A profile with this phone number already exists" });
+      }
+      console.error("Profile creation error:", err);
+      return res.status(500).json({ error: "Server error creating profile" });
+    }
+  });
+
+  app.get("/api/profile", async (req: Request, res: Response) => {
+    const phone = req.query.phone as string;
+    if (!phone || phone.length < 7) {
+      return res.status(400).json({ error: "Invalid phone number" });
+    }
+    const profile = await getProfileByPhone(phone);
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    return res.json({ profile });
+  });
+
   app.post("/api/contacts/upload", async (req: Request, res: Response) => {
     try {
       const parsed = uploadSchema.safeParse(req.body);

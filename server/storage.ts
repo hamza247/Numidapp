@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { contacts, type InsertContact } from "../shared/schema";
+import { contacts, profiles, type InsertContact, type InsertProfile, type Profile } from "../shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -69,6 +69,19 @@ export async function searchNumber(
   }
 
   return results;
+}
+
+export async function createProfile(data: InsertProfile): Promise<Profile> {
+  const [profile] = await db.insert(profiles).values(data).returning();
+  return profile;
+}
+
+export async function getProfileByPhone(phone: string): Promise<Profile | null> {
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.phone, phone));
+  return profile ?? null;
 }
 
 function normalizePhone(phone: string): string {

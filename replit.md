@@ -22,7 +22,8 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 - `constants/colors.ts` - Theme colors (dark/light)
 
 ## Features
-- Phone number onboarding with international country picker (90+ countries)
+- Profile creation with full name (validated: first + last) and phone number (validated: 7-15 digits)
+- Profiles stored in PostgreSQL `profiles` table via POST /api/profile
 - Contact sync gate: users MUST upload contacts before searching (sync required)
 - Contact sync via expo-contacts (dedup before batch insert, 50k limit, 10MB body)
 - Search by phone number with country code (locked until contacts synced)

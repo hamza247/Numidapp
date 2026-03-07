@@ -20,12 +20,14 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
-import { apiRequest } from "@/lib/query-client";
+import { apiRequest, getApiUrl } from "@/lib/query-client";
+import { fetch } from "expo/fetch";
 import CountryPicker from "@/components/CountryPicker";
 import { countries, type Country } from "@/lib/countries";
 import { useCoins } from "@/lib/coins";
 
 const PHONE_KEY = "user_phone";
+const NAME_KEY = "user_name";
 const HISTORY_KEY = "search_history";
 const SYNCED_KEY = "contacts_synced";
 const COUNTRY_KEY = "selected_country";
@@ -40,6 +42,10 @@ export default function HomeScreen() {
   const { coins } = useCoins();
 
   const [userPhone, setUserPhone] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [onboardingName, setOnboardingName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [onboardingPhone, setOnboardingPhone] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
   const [history, setHistory] = useState<Array<{ phone: string; country: string }>>([]);
@@ -55,13 +61,15 @@ export default function HomeScreen() {
   }, []);
 
   async function loadData() {
-    const [phone, historyStr, syncedVal, countryCode] = await Promise.all([
+    const [phone, name, historyStr, syncedVal, countryCode] = await Promise.all([
       AsyncStorage.getItem(PHONE_KEY),
+      AsyncStorage.getItem(NAME_KEY),
       AsyncStorage.getItem(HISTORY_KEY),
       AsyncStorage.getItem(SYNCED_KEY),
       AsyncStorage.getItem(COUNTRY_KEY),
     ]);
     setUserPhone(phone);
+    setUserName(name);
     if (historyStr) {
       try {
         const parsed = JSON.parse(historyStr);
@@ -85,17 +93,84 @@ export default function HomeScreen() {
     setLoading(false);
   }
 
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  function validateName(name: string): string | null {
+    const trimmed = name.trim();
+    if (trimmed.length < 2) return "Name must be at least 2 characters";
+    if (trimmed.length > 100) return "Name is too long";
+    if (!/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/.test(trimmed)) return "Name contains invalid characters";
+    if (trimmed.split(/\s+/).length < 2) return "Please enter your full name (first and last)";
+    return null;
+  }
+
+  function validatePhone(digits: string): string | null {
+    if (digits.length < 7) return "Phone number is too short";
+    if (digits.length > 15) return "Phone number is too long";
+    return null;
+  }
+
   async function saveUserPhone() {
+    const trimmedName = onboardingName.trim();
     const digits = onboardingPhone.replace(/\D/g, "");
-    if (digits.length < 5) {
+
+    const nError = validateName(trimmedName);
+    const pError = validatePhone(digits);
+    setNameError(nError);
+    setPhoneError(pError);
+
+    if (nError || pError) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+
+    setSavingProfile(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Keyboard.dismiss();
     const fullNumber = selectedCountry.dial.replace("+", "") + digits;
-    await AsyncStorage.setItem(PHONE_KEY, fullNumber);
-    await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
-    setUserPhone(fullNumber);
+
+    try {
+      const base = getApiUrl();
+      const url = new URL("/api/profile", base);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: trimmedName,
+          phone: fullNumber,
+          countryCode: selectedCountry.code,
+        }),
+        credentials: "include",
+      });
+
+      if (res.status === 409) {
+        await AsyncStorage.setItem(PHONE_KEY, fullNumber);
+        await AsyncStorage.setItem(NAME_KEY, trimmedName);
+        await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
+        setUserPhone(fullNumber);
+        setUserName(trimmedName);
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const details = data?.details;
+        if (details?.fullName) setNameError(details.fullName[0]);
+        if (details?.phone) setPhoneError(details.phone[0]);
+        if (!details) Alert.alert("Error", data?.error || "Failed to create profile");
+        return;
+      }
+
+      await AsyncStorage.setItem(PHONE_KEY, fullNumber);
+      await AsyncStorage.setItem(NAME_KEY, trimmedName);
+      await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
+      setUserPhone(fullNumber);
+      setUserName(trimmedName);
+    } catch (e) {
+      Alert.alert("Error", "Could not connect to the server. Please try again.");
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   async function syncContacts() {
@@ -204,11 +279,14 @@ export default function HomeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     await Promise.all([
       AsyncStorage.removeItem(PHONE_KEY),
+      AsyncStorage.removeItem(NAME_KEY),
       AsyncStorage.removeItem(SYNCED_KEY),
     ]);
     setUserPhone(null);
+    setUserName(null);
     setSynced(false);
     setOnboardingPhone("");
+    setOnboardingName("");
   }
 
   function getCountryForHistory(code: string): Country {
@@ -238,40 +316,78 @@ export default function HomeScreen() {
             Who Saved Me?
           </Text>
           <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            Discover who has your number saved in their contacts, and what name they gave you.
+            Create your profile to discover who has your number saved.
           </Text>
 
-          <View style={[styles.inputRow, { marginTop: 8 }]}>
-            <CountryPicker selected={selectedCountry} onSelect={setSelectedCountry} />
-            <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+              Full Name
+            </Text>
+            <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: nameError ? theme.destructive : theme.border }]}>
+              <Ionicons name="person-outline" size={18} color={nameError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
               <TextInput
-                ref={inputRef}
                 style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                placeholder="Phone number"
+                placeholder="First and last name"
                 placeholderTextColor={theme.textMuted}
-                keyboardType="phone-pad"
-                value={onboardingPhone}
-                onChangeText={(t) => setOnboardingPhone(t.replace(/\D/g, ""))}
-                returnKeyType="done"
-                onSubmitEditing={saveUserPhone}
-                maxLength={15}
+                autoCapitalize="words"
+                autoCorrect={false}
+                value={onboardingName}
+                onChangeText={(t) => { setOnboardingName(t); if (nameError) setNameError(null); }}
+                returnKeyType="next"
+                maxLength={100}
               />
             </View>
+            {nameError && (
+              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>
+                {nameError}
+              </Text>
+            )}
           </View>
 
-          <Text style={[styles.inputHint, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-            This identifies you when others search
-          </Text>
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+              Phone Number
+            </Text>
+            <View style={[styles.inputRow]}>
+              <CountryPicker selected={selectedCountry} onSelect={setSelectedCountry} />
+              <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: phoneError ? theme.destructive : theme.border, flex: 1 }]}>
+                <TextInput
+                  ref={inputRef}
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  placeholder="Phone number"
+                  placeholderTextColor={theme.textMuted}
+                  keyboardType="phone-pad"
+                  value={onboardingPhone}
+                  onChangeText={(t) => { setOnboardingPhone(t.replace(/\D/g, "")); if (phoneError) setPhoneError(null); }}
+                  returnKeyType="done"
+                  onSubmitEditing={saveUserPhone}
+                  maxLength={15}
+                />
+              </View>
+            </View>
+            {phoneError && (
+              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>
+                {phoneError}
+              </Text>
+            )}
+          </View>
 
           <Pressable
             style={({ pressed }) => [
               styles.continueBtn,
-              { backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 },
+              { backgroundColor: theme.tint, opacity: (pressed || savingProfile) ? 0.85 : 1 },
             ]}
             onPress={saveUserPhone}
+            disabled={savingProfile}
           >
-            <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Continue</Text>
-            <Ionicons name="arrow-forward" size={18} color="#000" />
+            {savingProfile ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <>
+                <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Profile</Text>
+                <Ionicons name="arrow-forward" size={18} color="#000" />
+              </>
+            )}
           </Pressable>
 
           <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
@@ -536,6 +652,19 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     letterSpacing: 0.5,
+  },
+  fieldGroup: {
+    width: "100%",
+    gap: 6,
+    marginTop: 4,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+  fieldError: {
+    fontSize: 12,
+    marginTop: -2,
   },
   inputHint: {
     fontSize: 12,
