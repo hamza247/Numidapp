@@ -232,8 +232,8 @@ export default function ResultsScreen() {
     }
   }
 
-  async function handleReveal(uploaderId: string) {
-    if (isRevealed(uploaderId)) return;
+  async function handleReveal(uploaderId: string, revealKey: string) {
+    if (isRevealed(revealKey)) return;
     if (!loaded) return;
 
     if (coins < REVEAL_COST) {
@@ -246,11 +246,11 @@ export default function ResultsScreen() {
       return;
     }
 
-    setRevealingId(uploaderId);
+    setRevealingId(revealKey);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const spent = await spendCoin(uploaderId);
+      const spent = await spendCoin(revealKey);
       if (!spent) {
         Alert.alert("Not Enough Coins", "You don't have enough coins.");
         return;
@@ -267,10 +267,9 @@ export default function ResultsScreen() {
 
       if (!res.ok) throw new Error(`${res.status}`);
       const data = (await res.json()) as { uploaderPhone: string };
-      await cacheRevealedPhone(uploaderId, data.uploaderPhone);
+      await cacheRevealedPhone(revealKey, data.uploaderPhone);
     } catch (e) {
       Alert.alert("Error", "Failed to reveal number. Your coin has been refunded.");
-      // Refund not implemented here for simplicity, but addCoins could be used
     } finally {
       setRevealingId(null);
     }
@@ -370,17 +369,20 @@ export default function ResultsScreen() {
             gap: 10,
           }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item, index }) => (
-            <ResultCard
-              item={item}
-              index={index}
-              theme={theme}
-              revealedPhone={getRevealedPhone(item.uploaderId)}
-              onReveal={() => handleReveal(item.uploaderId)}
-              coins={coins}
-              revealing={revealingId === item.uploaderId}
-            />
-          )}
+          renderItem={({ item, index }) => {
+            const revealKey = `${phone}__${item.uploaderId}`;
+            return (
+              <ResultCard
+                item={item}
+                index={index}
+                theme={theme}
+                revealedPhone={getRevealedPhone(revealKey)}
+                onReveal={() => handleReveal(item.uploaderId, revealKey)}
+                coins={coins}
+                revealing={revealingId === revealKey}
+              />
+            );
+          }}
           ListHeaderComponent={
             <Animated.View entering={FadeInDown.delay(0).duration(350)}>
               <View style={[styles.statsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
