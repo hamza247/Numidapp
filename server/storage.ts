@@ -1,38 +1,88 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import { contacts, type InsertContact } from "../shared/schema";
+import { eq, sql } from "drizzle-orm";
 
-// modify the interface with any CRUD methods
-// you might need
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle(pool);
 
-export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+export async function upsertContacts(items: InsertContact[]): Promise<number> {
+  if (items.length === 0) return 0;
+
+  const batchSize = 100;
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    await db
+      .insert(contacts)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: [contacts.uploaderPhone, contacts.storedNumber],
+        set: {
+          storedName: sql`excluded.stored_name`,
+          label: sql`excluded.label`,
+          updatedAt: sql`NOW()`,
+        },
+      });
+  }
+
+  return items.length;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+export async function searchNumber(
+  phoneNumber: string
+): Promise<Array<{ storedName: string; label: string }>> {
+  const normalized = normalizePhone(phoneNumber);
+  const variants = getPhoneVariants(normalized);
 
-  constructor() {
-    this.users = new Map();
+  const results: Array<{ storedName: string; label: string }> = [];
+  const seen = new Set<string>();
+
+  for (const variant of variants) {
+    const rows = await db
+      .select({
+        storedName: contacts.storedName,
+        label: contacts.label,
+        uploaderPhone: contacts.uploaderPhone,
+      })
+      .from(contacts)
+      .where(eq(contacts.storedNumber, variant));
+
+    for (const row of rows) {
+      const key = `${row.uploaderPhone}__${row.storedName}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        results.push({
+          storedName: row.storedName,
+          label: row.label ?? "mobile",
+        });
+      }
+    }
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
+  return results;
 }
 
-export const storage = new MemStorage();
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
+function getPhoneVariants(digits: string): string[] {
+  const variants = new Set<string>();
+  variants.add(digits);
+
+  if (digits.startsWith("1") && digits.length === 11) {
+    variants.add(digits.slice(1));
+  }
+  if (digits.length === 10) {
+    variants.add("1" + digits);
+  }
+  if (!digits.startsWith("+")) {
+    variants.add("+" + digits);
+  }
+  if (digits.startsWith("1")) {
+    variants.add("+" + digits);
+  }
+
+  return Array.from(variants);
+}

@@ -1,12 +1,43 @@
-// template
-const tintColorLight = "#2f95dc";
+const accent = "#00C9D4";
+const accentDim = "#00A3AB";
 
 export default {
+  accent,
+  accentDim,
+  dark: {
+    background: "#080C14",
+    surface: "#0F1623",
+    card: "#131D2E",
+    border: "#1A2540",
+    text: "#F0F4FF",
+    textSecondary: "#6B7FA3",
+    textMuted: "#3D4F70",
+    tint: accent,
+    tabIconDefault: "#3D4F70",
+    tabIconSelected: accent,
+    destructive: "#FF4B55",
+    success: "#00D68F",
+    labelMobile: "#4A9EFF",
+    labelHome: "#FF9500",
+    labelWork: "#AF52DE",
+    labelOther: "#64748B",
+  },
   light: {
-    text: "#000",
-    background: "#fff",
-    tint: tintColorLight,
-    tabIconDefault: "#ccc",
-    tabIconSelected: tintColorLight,
+    background: "#F0F4FF",
+    surface: "#FFFFFF",
+    card: "#FFFFFF",
+    border: "#E2E8F0",
+    text: "#0A0E1A",
+    textSecondary: "#475569",
+    textMuted: "#94A3B8",
+    tint: accentDim,
+    tabIconDefault: "#94A3B8",
+    tabIconSelected: accentDim,
+    destructive: "#EF4444",
+    success: "#10B981",
+    labelMobile: "#2563EB",
+    labelHome: "#D97706",
+    labelWork: "#7C3AED",
+    labelOther: "#64748B",
   },
 };
