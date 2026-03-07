@@ -38,11 +38,11 @@ export async function upsertContacts(items: InsertContact[]): Promise<number> {
 
 export async function searchNumber(
   phoneNumber: string
-): Promise<Array<{ storedName: string; label: string }>> {
+): Promise<Array<{ storedName: string; label: string; uploaderPhone: string }>> {
   const normalized = normalizePhone(phoneNumber);
   const variants = getPhoneVariants(normalized);
 
-  const results: Array<{ storedName: string; label: string }> = [];
+  const results: Array<{ storedName: string; label: string; uploaderPhone: string }> = [];
   const seen = new Set<string>();
 
   for (const variant of variants) {
@@ -62,6 +62,7 @@ export async function searchNumber(
         results.push({
           storedName: row.storedName,
           label: row.label ?? "mobile",
+          uploaderPhone: row.uploaderPhone,
         });
       }
     }

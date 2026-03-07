@@ -22,6 +22,7 @@ import { countries, type Country } from "@/lib/countries";
 interface SearchResult {
   storedName: string;
   label: string;
+  uploaderPhone: string;
 }
 
 function getLabelStyle(label: string, theme: typeof Colors.dark) {
@@ -71,6 +72,14 @@ function getAvatarColor(name: string, theme: typeof Colors.dark): string {
   return palette[Math.abs(hash) % palette.length];
 }
 
+function formatUploaderPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length <= 6) return digits;
+  const last4 = digits.slice(-4);
+  const masked = digits.slice(0, -4).replace(/./g, "*");
+  return masked + last4;
+}
+
 function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: number; theme: typeof Colors.dark }) {
   const labelStyle = getLabelStyle(item.label, theme);
   const avatarColor = getAvatarColor(item.storedName, theme);
@@ -92,11 +101,19 @@ function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: nu
           >
             {item.storedName}
           </Text>
-          <View style={styles.resultMeta}>
-            <Ionicons name={labelStyle.icon} size={12} color={labelStyle.text} />
-            <Text style={[styles.resultLabel, { color: labelStyle.text, fontFamily: "Inter_500Medium" }]}>
-              Saved as {labelStyle.display}
-            </Text>
+          <View style={styles.resultMetaRow}>
+            <View style={styles.resultMeta}>
+              <Ionicons name="person-outline" size={12} color={theme.textSecondary} />
+              <Text style={[styles.resultSubText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                {formatUploaderPhone(item.uploaderPhone)}
+              </Text>
+            </View>
+            <View style={styles.resultMeta}>
+              <Ionicons name={labelStyle.icon} size={12} color={labelStyle.text} />
+              <Text style={[styles.resultLabel, { color: labelStyle.text, fontFamily: "Inter_500Medium" }]}>
+                {labelStyle.display}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -465,13 +482,22 @@ const styles = StyleSheet.create({
   resultName: {
     fontSize: 16,
   },
+  resultMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
   resultMeta: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
+  resultSubText: {
+    fontSize: 11,
+  },
   resultLabel: {
-    fontSize: 12,
+    fontSize: 11,
   },
   labelBadge: {
     paddingHorizontal: 10,
