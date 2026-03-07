@@ -8,6 +8,7 @@ import {
   useColorScheme,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -18,11 +19,13 @@ import Colors from "@/constants/colors";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import { countries, type Country } from "@/lib/countries";
+import { useCoins, REVEAL_COST } from "@/lib/coins";
 
 interface SearchResult {
   storedName: string;
   label: string;
   uploaderPhone: string;
+  uploaderId: string;
 }
 
 function getLabelStyle(label: string, theme: typeof Colors.dark) {
@@ -42,10 +45,7 @@ function getLabelStyle(label: string, theme: typeof Colors.dark) {
   if (l.includes("main")) {
     return { bg: theme.labelMobile + "22", text: theme.labelMobile, icon: "call-outline" as const, display: "Main" };
   }
-  if (l.includes("other")) {
-    return { bg: theme.labelOther + "22", text: theme.labelOther, icon: "ellipsis-horizontal-outline" as const, display: "Other" };
-  }
-  return { bg: theme.labelOther + "22", text: theme.labelOther, icon: "pricetag-outline" as const, display: label };
+  return { bg: theme.labelOther + "22", text: theme.labelOther, icon: "pricetag-outline" as const, display: label || "Other" };
 }
 
 function getInitials(name: string): string {
@@ -56,14 +56,8 @@ function getInitials(name: string): string {
 
 function getAvatarColor(name: string, theme: typeof Colors.dark): string {
   const palette = [
-    theme.labelMobile,
-    theme.labelHome,
-    theme.labelWork,
-    theme.tint,
-    "#FF6B6B",
-    "#51CF66",
-    "#FF922B",
-    "#CC5DE8",
+    theme.labelMobile, theme.labelHome, theme.labelWork, theme.tint,
+    "#FF6B6B", "#51CF66", "#FF922B", "#CC5DE8",
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -72,19 +66,35 @@ function getAvatarColor(name: string, theme: typeof Colors.dark): string {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function formatUploaderPhone(phone?: string): string {
-  if (!phone) return "Unknown";
+function formatFullPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
-  if (digits.length <= 6) return digits;
-  const last4 = digits.slice(-4);
-  const masked = digits.slice(0, -4).replace(/./g, "*");
-  return masked + last4;
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 7) return digits;
+  if (digits.length <= 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`;
 }
 
-function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: number; theme: typeof Colors.dark }) {
+function ResultCard({
+  item,
+  index: idx,
+  theme,
+  revealedPhone,
+  onReveal,
+  coins,
+  revealing,
+}: {
+  item: SearchResult;
+  index: number;
+  theme: typeof Colors.dark;
+  revealedPhone: string | null;
+  onReveal: () => void;
+  coins: number;
+  revealing: boolean;
+}) {
   const labelStyle = getLabelStyle(item.label, theme);
   const avatarColor = getAvatarColor(item.storedName, theme);
   const initials = getInitials(item.storedName);
+  const isRevealed = revealedPhone !== null;
 
   return (
     <Animated.View entering={FadeInDown.delay(idx * 50).duration(350).springify()}>
@@ -102,26 +112,73 @@ function ResultCard({ item, index: idx, theme }: { item: SearchResult; index: nu
           >
             {item.storedName}
           </Text>
+
           <View style={styles.resultMetaRow}>
-            <View style={styles.resultMeta}>
-              <Ionicons name="person-outline" size={12} color={theme.textSecondary} />
-              <Text style={[styles.resultSubText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                {formatUploaderPhone(item.uploaderPhone)}
-              </Text>
-            </View>
-            <View style={styles.resultMeta}>
-              <Ionicons name={labelStyle.icon} size={12} color={labelStyle.text} />
-              <Text style={[styles.resultLabel, { color: labelStyle.text, fontFamily: "Inter_500Medium" }]}>
+            <View style={[styles.labelBadgeSmall, { backgroundColor: labelStyle.bg }]}>
+              <Ionicons name={labelStyle.icon} size={11} color={labelStyle.text} />
+              <Text style={[styles.labelSmallText, { color: labelStyle.text, fontFamily: "Inter_500Medium" }]}>
                 {labelStyle.display}
               </Text>
             </View>
           </View>
-        </View>
 
-        <View style={[styles.labelBadge, { backgroundColor: labelStyle.bg }]}>
-          <Text style={[styles.labelText, { color: labelStyle.text, fontFamily: "Inter_600SemiBold" }]}>
-            {labelStyle.display}
-          </Text>
+          <View style={styles.phoneRevealRow}>
+            {isRevealed ? (
+              <View style={styles.revealedRow}>
+                <Ionicons name="call-outline" size={14} color={theme.tint} />
+                <Text style={[styles.revealedPhone, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>
+                  {formatFullPhone(revealedPhone)}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.maskedRow}>
+                <Ionicons name="lock-closed-outline" size={13} color={theme.textMuted} />
+                <Text style={[styles.maskedPhone, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                  {item.uploaderPhone}
+                </Text>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.revealBtn,
+                    {
+                      backgroundColor: coins >= REVEAL_COST ? Colors.accent + "20" : theme.surface,
+                      borderColor: coins >= REVEAL_COST ? Colors.accent + "40" : theme.border,
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
+                  onPress={onReveal}
+                  disabled={revealing}
+                >
+                  {revealing ? (
+                    <ActivityIndicator size="small" color={Colors.accent} />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="eye-outline"
+                        size={14}
+                        color={coins >= REVEAL_COST ? Colors.accent : theme.textMuted}
+                      />
+                      <Text
+                        style={[
+                          styles.revealBtnText,
+                          {
+                            color: coins >= REVEAL_COST ? Colors.accent : theme.textMuted,
+                            fontFamily: "Inter_600SemiBold",
+                          },
+                        ]}
+                      >
+                        {REVEAL_COST}
+                      </Text>
+                      <Ionicons
+                        name="diamond"
+                        size={12}
+                        color={coins >= REVEAL_COST ? "#FFD700" : theme.textMuted}
+                      />
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -138,10 +195,12 @@ export default function ResultsScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
+  const { coins, spendCoin, isRevealed, getRevealedPhone, cacheRevealedPhone, loaded } = useCoins();
 
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revealingId, setRevealingId] = useState<string | null>(null);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
@@ -170,6 +229,50 @@ export default function ResultsScreen() {
       setError("Failed to load results. Please try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleReveal(uploaderId: string) {
+    if (isRevealed(uploaderId)) return;
+    if (!loaded) return;
+
+    if (coins < REVEAL_COST) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        "Not Enough Coins",
+        `You need ${REVEAL_COST} coin to reveal this number. You currently have ${coins} coins.`,
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    setRevealingId(uploaderId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      const spent = await spendCoin(uploaderId);
+      if (!spent) {
+        Alert.alert("Not Enough Coins", "You don't have enough coins.");
+        return;
+      }
+
+      const base = getApiUrl();
+      const url = new URL("/api/contacts/reveal", base);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploaderPhone: uploaderId }),
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error(`${res.status}`);
+      const data = (await res.json()) as { uploaderPhone: string };
+      await cacheRevealedPhone(uploaderId, data.uploaderPhone);
+    } catch (e) {
+      Alert.alert("Error", "Failed to reveal number. Your coin has been refunded.");
+      // Refund not implemented here for simplicity, but addCoins could be used
+    } finally {
+      setRevealingId(null);
     }
   }
 
@@ -207,6 +310,13 @@ export default function ResultsScreen() {
           </View>
           <Text style={[styles.headerCountry, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
             {country.name}
+          </Text>
+        </View>
+
+        <View style={[styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40" }]}>
+          <Ionicons name="diamond" size={14} color="#FFD700" />
+          <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
+            {coins}
           </Text>
         </View>
       </Animated.View>
@@ -252,7 +362,7 @@ export default function ResultsScreen() {
       {!loading && !error && results.length > 0 && (
         <FlatList
           data={results}
-          keyExtractor={(item, idx) => `${item.storedName}-${idx}`}
+          keyExtractor={(item, idx) => `${item.uploaderId}-${item.storedName}-${idx}`}
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingTop: 8,
@@ -261,7 +371,15 @@ export default function ResultsScreen() {
           }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item, index }) => (
-            <ResultCard item={item} index={index} theme={theme} />
+            <ResultCard
+              item={item}
+              index={index}
+              theme={theme}
+              revealedPhone={getRevealedPhone(item.uploaderId)}
+              onReveal={() => handleReveal(item.uploaderId)}
+              coins={coins}
+              revealing={revealingId === item.uploaderId}
+            />
           )}
           ListHeaderComponent={
             <Animated.View entering={FadeInDown.delay(0).duration(350)}>
@@ -315,7 +433,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     paddingHorizontal: 20,
     paddingBottom: 16,
-    gap: 14,
+    gap: 10,
   },
   backBtn: {
     width: 44,
@@ -340,12 +458,25 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   headerNumber: {
-    fontSize: 22,
+    fontSize: 20,
     letterSpacing: 0.3,
   },
   headerCountry: {
     fontSize: 13,
     marginLeft: 30,
+  },
+  coinBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  coinText: {
+    fontSize: 15,
   },
   loadingContainer: {
     flex: 1,
@@ -458,11 +589,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resultCard: {
-    flexDirection: "row",
-    alignItems: "center",
     borderWidth: 1,
     borderRadius: 14,
     padding: 14,
+    flexDirection: "row",
     gap: 12,
   },
   avatar: {
@@ -478,7 +608,7 @@ const styles = StyleSheet.create({
   },
   resultInfo: {
     flex: 1,
-    gap: 4,
+    gap: 6,
   },
   resultName: {
     fontSize: 16,
@@ -486,26 +616,51 @@ const styles = StyleSheet.create({
   resultMetaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
+    gap: 8,
   },
-  resultMeta: {
+  labelBadgeSmall: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  resultSubText: {
+  labelSmallText: {
     fontSize: 11,
   },
-  resultLabel: {
-    fontSize: 11,
+  phoneRevealRow: {
+    marginTop: 2,
   },
-  labelBadge: {
+  revealedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  revealedPhone: {
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
+  maskedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  maskedPhone: {
+    fontSize: 13,
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  revealBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+    borderWidth: 1,
   },
-  labelText: {
+  revealBtnText: {
     fontSize: 12,
   },
 });

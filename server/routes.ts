@@ -18,6 +18,18 @@ const searchSchema = z.object({
   phone: z.string().min(5).max(20),
 });
 
+const revealSchema = z.object({
+  uploaderPhone: z.string().min(7).max(20),
+});
+
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length <= 4) return "****";
+  const last4 = digits.slice(-4);
+  const masked = digits.slice(0, -4).replace(/./g, "*");
+  return masked + last4;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/contacts/upload", async (req: Request, res: Response) => {
     try {
@@ -53,7 +65,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const results = await searchNumber(parsed.data.phone);
-    return res.json({ results, count: results.length });
+    const masked = results.map((r) => ({
+      storedName: r.storedName,
+      label: r.label,
+      uploaderPhone: maskPhone(r.uploaderPhone),
+      uploaderId: Buffer.from(r.uploaderPhone).toString("base64"),
+    }));
+    return res.json({ results: masked, count: masked.length });
+  });
+
+  app.post("/api/contacts/reveal", async (req: Request, res: Response) => {
+    const parsed = revealSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid request" });
+    }
+
+    const decoded = Buffer.from(parsed.data.uploaderPhone, "base64").toString("utf-8");
+    const digits = decoded.replace(/\D/g, "");
+    if (digits.length < 7) {
+      return res.status(400).json({ error: "Invalid uploader reference" });
+    }
+
+    return res.json({ uploaderPhone: decoded });
   });
 
   const httpServer = createServer(app);

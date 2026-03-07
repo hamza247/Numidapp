@@ -23,6 +23,7 @@ import Colors from "@/constants/colors";
 import { apiRequest } from "@/lib/query-client";
 import CountryPicker from "@/components/CountryPicker";
 import { countries, type Country } from "@/lib/countries";
+import { useCoins } from "@/lib/coins";
 
 const PHONE_KEY = "user_phone";
 const HISTORY_KEY = "search_history";
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
+  const { coins } = useCoins();
 
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [onboardingPhone, setOnboardingPhone] = useState("");
@@ -287,6 +289,13 @@ export default function HomeScreen() {
               Discover who has your contact
             </Text>
           </View>
+          <View style={styles.headerActions}>
+            <View style={[styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40" }]}>
+              <Ionicons name="diamond" size={14} color="#FFD700" />
+              <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
+                {coins}
+              </Text>
+            </View>
           <Pressable
             style={({ pressed }) => [
               styles.syncBtn,
@@ -308,6 +317,7 @@ export default function HomeScreen() {
               />
             )}
           </Pressable>
+          </View>
         </Animated.View>
 
         <Animated.View style={styles.searchSection} entering={FadeInDown.delay(80).duration(400)}>
@@ -533,6 +543,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 2,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  coinBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  coinText: {
+    fontSize: 15,
+  },
   syncBtn: {
     width: 44,
     height: 44,
@@ -540,7 +567,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
   },
   searchSection: {
     paddingHorizontal: 20,
