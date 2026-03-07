@@ -160,6 +160,18 @@ export default function HomeScreen() {
   }
 
   async function performSearch(phone?: string, countryOverride?: Country) {
+    if (!synced) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        "Sync Required",
+        "You need to upload your contacts before you can search. This helps build the network for everyone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sync Now", onPress: syncContacts },
+        ]
+      );
+      return;
+    }
     const digits = (phone ?? searchPhone).replace(/\D/g, "");
     if (digits.length < 5) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -358,24 +370,36 @@ export default function HomeScreen() {
         </Animated.View>
 
         {!synced && (
-          <Animated.View entering={FadeInDown.delay(160).duration(400)}>
-            <Pressable
-              style={[styles.syncBanner, { backgroundColor: theme.tint + "15", borderColor: theme.tint + "35" }]}
-              onPress={syncContacts}
-            >
-              <View style={[styles.syncBannerIcon, { backgroundColor: theme.tint + "25" }]}>
-                <Ionicons name="people-outline" size={18} color={theme.tint} />
+          <Animated.View entering={FadeInDown.delay(160).duration(400)} style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+            <View style={[styles.syncGateCard, { backgroundColor: theme.card, borderColor: theme.tint + "40" }]}>
+              <View style={[styles.syncGateIconWrap, { backgroundColor: theme.tint + "15" }]}>
+                <Ionicons name="lock-closed" size={24} color={theme.tint} />
               </View>
-              <View style={styles.syncBannerText}>
-                <Text style={[styles.syncBannerTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
-                  Sync your contacts
-                </Text>
-                <Text style={[styles.syncBannerSub, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                  Help others find who saved their number
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-            </Pressable>
+              <Text style={[styles.syncGateTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
+                Upload contacts to unlock search
+              </Text>
+              <Text style={[styles.syncGateBody, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                Share your contact list to help build the network. You can then search any number to see who has it saved.
+              </Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.syncGateBtn,
+                  { backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={syncContacts}
+              >
+                {syncing ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <>
+                    <Ionicons name="cloud-upload-outline" size={18} color="#000" />
+                    <Text style={[styles.syncGateBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                      Sync Contacts Now
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
           </Animated.View>
         )}
 
@@ -405,6 +429,10 @@ export default function HomeScreen() {
                       { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
                     ]}
                     onPress={() => {
+                      if (!synced) {
+                        performSearch(item.phone, c);
+                        return;
+                      }
                       router.push({
                         pathname: "/results",
                         params: { phone: item.phone, countryCode: item.country, localNumber: item.phone },
@@ -598,32 +626,44 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 8,
   },
-  syncBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 20,
+  syncGateCard: {
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
     gap: 12,
-    marginBottom: 8,
   },
-  syncBannerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  syncGateIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 4,
   },
-  syncBannerText: {
-    flex: 1,
-    gap: 2,
+  syncGateTitle: {
+    fontSize: 17,
+    textAlign: "center",
   },
-  syncBannerTitle: {
+  syncGateBody: {
     fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
   },
-  syncBannerSub: {
-    fontSize: 12,
+  syncGateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 4,
+    width: "100%" as any,
+  },
+  syncGateBtnText: {
+    fontSize: 16,
+    color: "#000",
   },
   sectionHeader: {
     flexDirection: "row",

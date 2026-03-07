@@ -23,10 +23,12 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 
 ## Features
 - Phone number onboarding with international country picker (90+ countries)
+- Contact sync gate: users MUST upload contacts before searching (sync required)
 - Contact sync via expo-contacts (dedup before batch insert, 50k limit, 10MB body)
-- Search by phone number with country code
+- Search by phone number with country code (locked until contacts synced)
 - Results show: contact name, label badge (Mobile/Home/Work/etc), masked uploader phone
-- Coin system: 5 free coins, spend 1 to reveal full uploader phone number
+- Coin system: 5 free coins, spend 1 to reveal full uploader phone number (server-side enforcement)
+- Reveal endpoint: POST /api/contacts/reveal with base64-encoded uploaderId
 - Coin balance displayed in header on home and results screens
 - Search history with country flags
 - Dark/light theme support
