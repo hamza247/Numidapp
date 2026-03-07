@@ -9,10 +9,17 @@ const db = drizzle(pool);
 export async function upsertContacts(items: InsertContact[]): Promise<number> {
   if (items.length === 0) return 0;
 
+  const seen = new Map<string, InsertContact>();
+  for (const item of items) {
+    const key = `${item.uploaderPhone}__${item.storedNumber}`;
+    seen.set(key, item);
+  }
+  const deduped = Array.from(seen.values());
+
   const batchSize = 100;
 
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
+  for (let i = 0; i < deduped.length; i += batchSize) {
+    const batch = deduped.slice(i, i + batchSize);
     await db
       .insert(contacts)
       .values(batch)
@@ -26,7 +33,7 @@ export async function upsertContacts(items: InsertContact[]): Promise<number> {
       });
   }
 
-  return items.length;
+  return deduped.length;
 }
 
 export async function searchNumber(
