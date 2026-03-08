@@ -166,6 +166,18 @@ export async function getProfileByPhone(phone: string): Promise<Profile | null> 
   return profile ?? null;
 }
 
+export async function deleteProfile(phone: string): Promise<void> {
+  await db.delete(contacts).where(eq(contacts.uploaderPhone, phone));
+  await db.delete(profiles).where(eq(profiles.phone, phone));
+  await db.delete(phoneVerifications).where(eq(phoneVerifications.phone, phone));
+}
+
+export async function removePhoneFromContacts(phone: string): Promise<number> {
+  const normalized = phone.replace(/\D/g, "");
+  const result = await db.delete(contacts).where(eq(contacts.storedNumber, normalized));
+  return (result as any).rowCount ?? 0;
+}
+
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "");
 }

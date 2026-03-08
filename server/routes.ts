@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, getProfileByPhone, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
+import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
 import { z } from "zod";
 
 async function sendSmsOtp(to: string, code: string): Promise<boolean> {
@@ -166,6 +166,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ profile: { fullName: p.fullName, phone: p.phone, countryCode: p.countryCode } });
     } catch (err) {
       console.error("Login error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.delete("/api/profile", async (req: Request, res: Response) => {
+    const phone = req.query.phone as string;
+    if (!phone || phone.length < 7) {
+      return res.status(400).json({ error: "Invalid phone number" });
+    }
+    try {
+      await deleteProfile(phone);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error("Delete profile error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.delete("/api/contacts/number", async (req: Request, res: Response) => {
+    const phone = req.query.phone as string;
+    if (!phone || phone.length < 7) {
+      return res.status(400).json({ error: "Invalid phone number" });
+    }
+    try {
+      const removed = await removePhoneFromContacts(phone);
+      return res.json({ success: true, removed });
+    } catch (err) {
+      console.error("Remove phone error:", err);
       return res.status(500).json({ error: "Server error" });
     }
   });

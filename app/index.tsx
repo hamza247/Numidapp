@@ -57,7 +57,7 @@ export default function HomeScreen() {
   const [searchCountry, setSearchCountry] = useState<Country>(defaultCountry);
   const inputRef = useRef<TextInput>(null);
   const otpInputRef = useRef<TextInput>(null);
-  const [onboardingStep, setOnboardingStep] = useState<"register" | "verify" | "setPassword" | "login">("register");
+  const [onboardingStep, setOnboardingStep] = useState<"register" | "verify" | "setPassword" | "login">("login");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -891,6 +891,12 @@ export default function HomeScreen() {
               <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
                 {coins}
               </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.syncBtn, { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => router.push("/profile")}
+            >
+              <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
             </Pressable>
           <Pressable
             style={({ pressed }) => [
