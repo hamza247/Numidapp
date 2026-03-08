@@ -13,6 +13,7 @@ import {
   Keyboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Contacts from "expo-contacts";
@@ -420,7 +421,11 @@ export default function HomeScreen() {
   if (!userPhone) {
     if (onboardingStep === "verify") {
       return (
-        <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }]}>
+        <KeyboardAwareScrollViewCompat
+          style={{ flex: 1, backgroundColor: theme.background }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }}
+          bottomOffset={24}
+        >
           <Animated.View style={styles.onboardingContent} entering={FadeInDown.duration(500).springify()}>
             <View style={[styles.iconRing, { borderColor: "#FFD700" + "40", backgroundColor: "#FFD700" + "15" }]}>
               <Ionicons name="shield-checkmark-outline" size={48} color="#FFD700" />
@@ -519,12 +524,16 @@ export default function HomeScreen() {
               </Text>
             </Pressable>
           </Animated.View>
-        </View>
+        </KeyboardAwareScrollViewCompat>
       );
     }
 
     return (
-      <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }]}>
+      <KeyboardAwareScrollViewCompat
+        style={{ flex: 1, backgroundColor: theme.background }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }}
+        bottomOffset={24}
+      >
         <Animated.View style={styles.onboardingContent} entering={FadeInDown.duration(600).springify()}>
           <View style={[styles.iconRing, { borderColor: theme.tint + "30", backgroundColor: theme.tint + "12" }]}>
             <Ionicons name="search" size={48} color={theme.tint} />
@@ -612,7 +621,7 @@ export default function HomeScreen() {
             Your number is never shown to other users
           </Text>
         </Animated.View>
-      </View>
+      </KeyboardAwareScrollViewCompat>
     );
   }
 
