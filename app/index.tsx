@@ -55,6 +55,13 @@ export default function HomeScreen() {
   const [selectedCountry, setSelectedCountry] = useState<Country>(defaultCountry);
   const [searchCountry, setSearchCountry] = useState<Country>(defaultCountry);
   const inputRef = useRef<TextInput>(null);
+  const otpInputRef = useRef<TextInput>(null);
+  const [onboardingStep, setOnboardingStep] = useState<"register" | "verify">("register");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [pendingPhone, setPendingPhone] = useState("");
 
   useEffect(() => {
     loadData();
@@ -93,8 +100,6 @@ export default function HomeScreen() {
     setLoading(false);
   }
 
-  const [savingProfile, setSavingProfile] = useState(false);
-
   function validateName(name: string): string | null {
     const trimmed = name.trim();
     if (trimmed.length < 2) return "Name must be at least 2 characters";
@@ -110,7 +115,7 @@ export default function HomeScreen() {
     return null;
   }
 
-  async function saveUserPhone() {
+  async function sendOtpCode() {
     const trimmedName = onboardingName.trim();
     const digits = onboardingPhone.replace(/\D/g, "");
 
@@ -118,58 +123,133 @@ export default function HomeScreen() {
     const pError = validatePhone(digits);
     setNameError(nError);
     setPhoneError(pError);
-
     if (nError || pError) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
-    setSavingProfile(true);
+    setSendingOtp(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Keyboard.dismiss();
     const fullNumber = selectedCountry.dial.replace("+", "") + digits;
 
     try {
       const base = getApiUrl();
-      const url = new URL("/api/profile", base);
+      const url = new URL("/api/auth/send-otp", base);
       const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: fullNumber }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        Alert.alert("Error", data?.error || "Failed to send verification code");
+        return;
+      }
+
+      setPendingPhone(fullNumber);
+      setOtpCode("");
+      setOtpError(null);
+      setOnboardingStep("verify");
+      setTimeout(() => otpInputRef.current?.focus(), 300);
+    } catch (e) {
+      Alert.alert("Error", "Could not connect to the server. Please try again.");
+    } finally {
+      setSendingOtp(false);
+    }
+  }
+
+  async function verifyOtpAndFinish() {
+    if (otpCode.length !== 6) {
+      setOtpError("Please enter the complete 6-digit code");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    setVerifyingOtp(true);
+    setOtpError(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Keyboard.dismiss();
+
+    try {
+      const base = getApiUrl();
+      const verifyUrl = new URL("/api/auth/verify-otp", base);
+      const verifyRes = await fetch(verifyUrl.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: pendingPhone, code: otpCode }),
+        credentials: "include",
+      });
+
+      if (!verifyRes.ok) {
+        const data = await verifyRes.json().catch(() => ({}));
+        setOtpError(data?.error || "Verification failed");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+
+      const trimmedName = onboardingName.trim();
+      const profileUrl = new URL("/api/profile", base);
+      const profileRes = await fetch(profileUrl.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: trimmedName,
-          phone: fullNumber,
+          phone: pendingPhone,
           countryCode: selectedCountry.code,
         }),
         credentials: "include",
       });
 
-      if (res.status === 409) {
-        await AsyncStorage.setItem(PHONE_KEY, fullNumber);
-        await AsyncStorage.setItem(NAME_KEY, trimmedName);
-        await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
-        setUserPhone(fullNumber);
-        setUserName(trimmedName);
+      if (profileRes.status !== 409 && !profileRes.ok) {
+        const data = await profileRes.json().catch(() => ({}));
+        Alert.alert("Error", data?.error || "Failed to create profile");
         return;
       }
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const details = data?.details;
-        if (details?.fullName) setNameError(details.fullName[0]);
-        if (details?.phone) setPhoneError(details.phone[0]);
-        if (!details) Alert.alert("Error", data?.error || "Failed to create profile");
-        return;
+      let finalName = trimmedName;
+      if (profileRes.ok) {
+        const profileData = await profileRes.json().catch(() => ({}));
+        finalName = profileData?.profile?.fullName || trimmedName;
       }
 
-      await AsyncStorage.setItem(PHONE_KEY, fullNumber);
-      await AsyncStorage.setItem(NAME_KEY, trimmedName);
+      await AsyncStorage.setItem(PHONE_KEY, pendingPhone);
+      await AsyncStorage.setItem(NAME_KEY, finalName);
       await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
-      setUserPhone(fullNumber);
-      setUserName(trimmedName);
+      setUserPhone(pendingPhone);
+      setUserName(finalName);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       Alert.alert("Error", "Could not connect to the server. Please try again.");
     } finally {
-      setSavingProfile(false);
+      setVerifyingOtp(false);
+    }
+  }
+
+  async function resendOtpCode() {
+    setSendingOtp(true);
+    try {
+      const base = getApiUrl();
+      const url = new URL("/api/auth/send-otp", base);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: pendingPhone }),
+        credentials: "include",
+      });
+      if (res.ok) {
+        setOtpCode("");
+        setOtpError(null);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert("Code Sent", "A new verification code has been sent to your phone.");
+      } else {
+        Alert.alert("Error", "Failed to resend code. Please try again.");
+      }
+    } catch {
+      Alert.alert("Error", "Could not connect to the server.");
+    } finally {
+      setSendingOtp(false);
     }
   }
 
@@ -317,6 +397,9 @@ export default function HomeScreen() {
     setSynced(false);
     setOnboardingPhone("");
     setOnboardingName("");
+    setOnboardingStep("register");
+    setOtpCode("");
+    setOtpError(null);
   }
 
   function getCountryForHistory(code: string): Country {
@@ -335,6 +418,111 @@ export default function HomeScreen() {
   const webBottom = Platform.OS === "web" ? 34 : 0;
 
   if (!userPhone) {
+    if (onboardingStep === "verify") {
+      return (
+        <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }]}>
+          <Animated.View style={styles.onboardingContent} entering={FadeInDown.duration(500).springify()}>
+            <View style={[styles.iconRing, { borderColor: "#FFD700" + "40", backgroundColor: "#FFD700" + "15" }]}>
+              <Ionicons name="shield-checkmark-outline" size={48} color="#FFD700" />
+            </View>
+
+            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+              Verify Your Number
+            </Text>
+            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              We sent a 6-digit code to{"\n"}
+              <Text style={{ color: theme.tint, fontFamily: "Inter_600SemiBold" }}>
+                +{pendingPhone}
+              </Text>
+            </Text>
+
+            <Pressable onPress={() => { otpInputRef.current?.focus(); }} style={{ width: "100%" }}>
+              <View style={styles.otpRow}>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.otpBox,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: otpError
+                          ? theme.destructive
+                          : otpCode.length === i
+                          ? theme.tint
+                          : otpCode.length > i
+                          ? theme.tint + "60"
+                          : theme.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.otpDigit, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+                      {otpCode[i] ?? ""}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </Pressable>
+
+            <TextInput
+              ref={otpInputRef}
+              style={styles.hiddenInput}
+              value={otpCode}
+              onChangeText={(t) => {
+                const digits = t.replace(/\D/g, "").slice(0, 6);
+                setOtpCode(digits);
+                if (otpError) setOtpError(null);
+              }}
+              keyboardType="number-pad"
+              maxLength={6}
+              autoFocus
+              caretHidden
+            />
+
+            {otpError && (
+              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular", textAlign: "center" }]}>
+                {otpError}
+              </Text>
+            )}
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.continueBtn,
+                { backgroundColor: theme.tint, opacity: (pressed || verifyingOtp) ? 0.85 : 1 },
+              ]}
+              onPress={verifyOtpAndFinish}
+              disabled={verifyingOtp || otpCode.length !== 6}
+            >
+              {verifyingOtp ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <>
+                  <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Verify Code</Text>
+                  <Ionicons name="checkmark" size={18} color="#000" />
+                </>
+              )}
+            </Pressable>
+
+            <View style={styles.resendRow}>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                Didn't receive the code?
+              </Text>
+              <Pressable onPress={resendOtpCode} disabled={sendingOtp}>
+                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold", opacity: sendingOtp ? 0.5 : 1 }]}>
+                  {sendingOtp ? "Sending..." : "Resend"}
+                </Text>
+              </Pressable>
+            </View>
+
+            <Pressable onPress={() => { setOnboardingStep("register"); setOtpCode(""); setOtpError(null); }}>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                Change phone number
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }]}>
         <Animated.View style={styles.onboardingContent} entering={FadeInDown.duration(600).springify()}>
@@ -390,7 +578,7 @@ export default function HomeScreen() {
                   value={onboardingPhone}
                   onChangeText={(t) => { setOnboardingPhone(t.replace(/\D/g, "")); if (phoneError) setPhoneError(null); }}
                   returnKeyType="done"
-                  onSubmitEditing={saveUserPhone}
+                  onSubmitEditing={sendOtpCode}
                   maxLength={15}
                 />
               </View>
@@ -405,16 +593,16 @@ export default function HomeScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.continueBtn,
-              { backgroundColor: theme.tint, opacity: (pressed || savingProfile) ? 0.85 : 1 },
+              { backgroundColor: theme.tint, opacity: (pressed || sendingOtp) ? 0.85 : 1 },
             ]}
-            onPress={saveUserPhone}
-            disabled={savingProfile}
+            onPress={sendOtpCode}
+            disabled={sendingOtp}
           >
-            {savingProfile ? (
+            {sendingOtp ? (
               <ActivityIndicator size="small" color="#000" />
             ) : (
               <>
-                <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Profile</Text>
+                <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Send Verification Code</Text>
                 <Ionicons name="arrow-forward" size={18} color="#000" />
               </>
             )}
@@ -701,6 +889,38 @@ const styles = StyleSheet.create({
   inputHint: {
     fontSize: 12,
     marginTop: -4,
+  },
+  otpRow: {
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "center",
+    width: "100%",
+    marginVertical: 8,
+  },
+  otpBox: {
+    width: 46,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  otpDigit: {
+    fontSize: 24,
+  },
+  hiddenInput: {
+    position: "absolute",
+    width: 1,
+    height: 1,
+    opacity: 0,
+  },
+  resendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  resendLink: {
+    fontSize: 14,
   },
   continueBtn: {
     flexDirection: "row",

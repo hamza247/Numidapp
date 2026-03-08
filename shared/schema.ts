@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, timestamp, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, boolean, timestamp, index, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -62,3 +62,13 @@ export const insertProfileSchema = createInsertSchema(profiles).pick({
 
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Profile = typeof profiles.$inferSelect;
+
+export const phoneVerifications = pgTable("phone_verifications", {
+  id: serial("id").primaryKey(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  verified: boolean("verified").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});

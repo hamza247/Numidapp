@@ -1,7 +1,43 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { upsertContacts, searchNumber, createProfile, getProfileByPhone } from "./storage";
+import { upsertContacts, searchNumber, createProfile, getProfileByPhone, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
 import { z } from "zod";
+
+async function sendSmsOtp(to: string, code: string): Promise<boolean> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_PHONE_NUMBER;
+
+  if (!accountSid || !authToken || !from) {
+    console.log(`[DEV] OTP for ${to}: ${code}`);
+    return true;
+  }
+
+  const e164 = to.startsWith("+") ? to : `+${to}`;
+  const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: e164,
+          From: from,
+          Body: `Your Who Saved Me verification code is: ${code}. Valid for 10 minutes.`,
+        }).toString(),
+      }
+    );
+    return res.ok;
+  } catch (err) {
+    console.error("Twilio SMS error:", err);
+    return false;
+  }
+}
 
 const uploadSchema = z.object({
   uploaderPhone: z.string().min(7).max(20),
@@ -27,7 +63,55 @@ const profileSchema = z.object({
 });
 
 
+const sendOtpSchema = z.object({
+  phone: z.string().min(7).max(20),
+});
+
+const verifyOtpSchema = z.object({
+  phone: z.string().min(7).max(20),
+  code: z.string().length(6).regex(/^\d{6}$/),
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.post("/api/auth/send-otp", async (req: Request, res: Response) => {
+    const parsed = sendOtpSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid phone number" });
+    }
+    const { phone } = parsed.data;
+
+    try {
+      const code = await createOrReplaceOtp(phone);
+      const sent = await sendSmsOtp(phone, code);
+      if (!sent) {
+        return res.status(500).json({ error: "Failed to send SMS. Please try again." });
+      }
+      return res.json({ success: true });
+    } catch (err) {
+      console.error("send-otp error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/verify-otp", async (req: Request, res: Response) => {
+    const parsed = verifyOtpSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid request" });
+    }
+    const { phone, code } = parsed.data;
+
+    try {
+      const result = await verifyOtp(phone, code);
+      if (!result.success) {
+        return res.status(400).json({ error: result.reason });
+      }
+      return res.json({ success: true });
+    } catch (err) {
+      console.error("verify-otp error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
   app.post("/api/profile", async (req: Request, res: Response) => {
     try {
       const parsed = profileSchema.safeParse(req.body);
