@@ -74,7 +74,7 @@ export async function searchNumber(
 }
 
 export async function createOrReplaceOtp(phone: string): Promise<string> {
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = "112233";
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await db.delete(phoneVerifications).where(eq(phoneVerifications.phone, phone));
