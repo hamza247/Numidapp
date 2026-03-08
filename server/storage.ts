@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { contacts, profiles, phoneVerifications, type InsertContact, type InsertProfile, type Profile } from "../shared/schema";
 import { eq, sql, and, gt } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool);
@@ -119,6 +120,42 @@ export async function isPhoneVerified(phone: string): Promise<boolean> {
 export async function createProfile(data: InsertProfile): Promise<Profile> {
   const [profile] = await db.insert(profiles).values(data).returning();
   return profile;
+}
+
+export async function createProfileWithPassword(
+  data: InsertProfile,
+  password: string
+): Promise<Profile> {
+  const passwordHash = await bcrypt.hash(password, 10);
+  const [profile] = await db
+    .insert(profiles)
+    .values({ ...data, passwordHash })
+    .returning();
+  return profile;
+}
+
+export async function loginWithPassword(
+  phone: string,
+  password: string
+): Promise<{ success: boolean; profile?: Profile; reason?: string }> {
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.phone, phone));
+
+  if (!profile) {
+    return { success: false, reason: "No account found with this phone number." };
+  }
+  if (!profile.passwordHash) {
+    return { success: false, reason: "This account does not have a password set." };
+  }
+
+  const match = await bcrypt.compare(password, profile.passwordHash);
+  if (!match) {
+    return { success: false, reason: "Incorrect password. Please try again." };
+  }
+
+  return { success: true, profile };
 }
 
 export async function getProfileByPhone(phone: string): Promise<Profile | null> {

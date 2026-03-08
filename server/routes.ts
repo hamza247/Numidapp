@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { upsertContacts, searchNumber, createProfile, getProfileByPhone, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
+import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, getProfileByPhone, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
 import { z } from "zod";
 
 async function sendSmsOtp(to: string, code: string): Promise<boolean> {
@@ -72,6 +72,18 @@ const verifyOtpSchema = z.object({
   code: z.string().length(6).regex(/^\d{6}$/),
 });
 
+const registerSchema = z.object({
+  phone: z.string().min(7).max(20),
+  fullName: z.string().min(2).max(100).regex(/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/),
+  countryCode: z.string().min(1).max(5),
+  password: z.string().min(6, "Password must be at least 6 characters").max(100),
+});
+
+const loginSchema = z.object({
+  phone: z.string().min(7).max(20),
+  password: z.string().min(1).max(100),
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/send-otp", async (req: Request, res: Response) => {
     const parsed = sendOtpSchema.safeParse(req.body);
@@ -108,6 +120,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ success: true });
     } catch (err) {
       console.error("verify-otp error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten().fieldErrors });
+    }
+    const { phone, fullName, countryCode, password } = parsed.data;
+
+    try {
+      const verified = await isPhoneVerified(phone);
+      if (!verified) {
+        return res.status(403).json({ error: "Phone number not verified. Please complete OTP verification first." });
+      }
+
+      const existing = await getProfileByPhone(phone);
+      if (existing) {
+        return res.status(409).json({ error: "An account with this phone number already exists." });
+      }
+
+      const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password);
+      return res.json({ profile: { fullName: profile.fullName, phone: profile.phone, countryCode: profile.countryCode } });
+    } catch (err) {
+      console.error("Register error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid request" });
+    }
+    const { phone, password } = parsed.data;
+
+    try {
+      const result = await loginWithPassword(phone, password);
+      if (!result.success || !result.profile) {
+        return res.status(401).json({ error: result.reason || "Login failed" });
+      }
+      const p = result.profile;
+      return res.json({ profile: { fullName: p.fullName, phone: p.phone, countryCode: p.countryCode } });
+    } catch (err) {
+      console.error("Login error:", err);
       return res.status(500).json({ error: "Server error" });
     }
   });

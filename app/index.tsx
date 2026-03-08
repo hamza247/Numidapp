@@ -57,12 +57,24 @@ export default function HomeScreen() {
   const [searchCountry, setSearchCountry] = useState<Country>(defaultCountry);
   const inputRef = useRef<TextInput>(null);
   const otpInputRef = useRef<TextInput>(null);
-  const [onboardingStep, setOnboardingStep] = useState<"register" | "verify">("register");
+  const [onboardingStep, setOnboardingStep] = useState<"register" | "verify" | "setPassword" | "login">("register");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
   const [pendingPhone, setPendingPhone] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -190,42 +202,88 @@ export default function HomeScreen() {
         return;
       }
 
-      const trimmedName = onboardingName.trim();
-      const profileUrl = new URL("/api/profile", base);
-      const profileRes = await fetch(profileUrl.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: trimmedName,
-          phone: pendingPhone,
-          countryCode: selectedCountry.code,
-        }),
-        credentials: "include",
-      });
-
-      if (profileRes.status !== 409 && !profileRes.ok) {
-        const data = await profileRes.json().catch(() => ({}));
-        Alert.alert("Error", data?.error || "Failed to create profile");
-        return;
-      }
-
-      let finalName = trimmedName;
-      if (profileRes.ok) {
-        const profileData = await profileRes.json().catch(() => ({}));
-        finalName = profileData?.profile?.fullName || trimmedName;
-      }
-
-      await AsyncStorage.setItem(PHONE_KEY, pendingPhone);
-      await AsyncStorage.setItem(NAME_KEY, finalName);
-      await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
-      setUserPhone(pendingPhone);
-      setUserName(finalName);
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordError(null);
+      setConfirmPasswordError(null);
+      setOnboardingStep("setPassword");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       Alert.alert("Error", "Could not connect to the server. Please try again.");
     } finally {
       setVerifyingOtp(false);
     }
+  }
+
+  async function createAccountWithPassword() {
+    const pw = newPassword.trim();
+    const cpw = confirmPassword.trim();
+    let pError: string | null = null;
+    let cpError: string | null = null;
+    if (pw.length < 6) pError = "Password must be at least 6 characters";
+    if (!cpw) cpError = "Please confirm your password";
+    else if (pw !== cpw) cpError = "Passwords do not match";
+    setPasswordError(pError);
+    setConfirmPasswordError(cpError);
+    if (pError || cpError) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
+
+    setSavingPassword(true);
+    Keyboard.dismiss();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const base = getApiUrl();
+      const url = new URL("/api/auth/register", base);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: pendingPhone, fullName: onboardingName.trim(), countryCode: selectedCountry.code, password: pw }),
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { Alert.alert("Error", data?.error || "Failed to create account"); return; }
+      const finalName = data?.profile?.fullName || onboardingName.trim();
+      await AsyncStorage.setItem(PHONE_KEY, pendingPhone);
+      await AsyncStorage.setItem(NAME_KEY, finalName);
+      await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
+      setUserPhone(pendingPhone);
+      setUserName(finalName);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch { Alert.alert("Error", "Could not connect to the server. Please try again."); }
+    finally { setSavingPassword(false); }
+  }
+
+  async function performLogin() {
+    const digits = loginPhone.replace(/\D/g, "");
+    if (digits.length < 7 || !loginPassword) {
+      setLoginError(!loginPassword ? "Please enter your password" : "Please enter a valid phone number");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    setLoggingIn(true);
+    setLoginError(null);
+    Keyboard.dismiss();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const fullNumber = selectedCountry.dial.replace("+", "") + digits;
+    try {
+      const base = getApiUrl();
+      const url = new URL("/api/auth/login", base);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: fullNumber, password: loginPassword }),
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setLoginError(data?.error || "Login failed. Please check your credentials."); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
+      const profile = data?.profile;
+      await AsyncStorage.setItem(PHONE_KEY, fullNumber);
+      await AsyncStorage.setItem(NAME_KEY, profile?.fullName || "");
+      await AsyncStorage.setItem(COUNTRY_KEY, profile?.countryCode || selectedCountry.code);
+      setUserPhone(fullNumber);
+      setUserName(profile?.fullName || "");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch { Alert.alert("Error", "Could not connect to the server. Please try again."); }
+    finally { setLoggingIn(false); }
   }
 
   async function resendOtpCode() {
@@ -401,6 +459,13 @@ export default function HomeScreen() {
     setOnboardingStep("register");
     setOtpCode("");
     setOtpError(null);
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError(null);
+    setConfirmPasswordError(null);
+    setLoginPhone("");
+    setLoginPassword("");
+    setLoginError(null);
   }
 
   function getCountryForHistory(code: string): Country {
@@ -528,6 +593,172 @@ export default function HomeScreen() {
       );
     }
 
+    if (onboardingStep === "setPassword") {
+      return (
+        <KeyboardAwareScrollViewCompat
+          style={{ flex: 1, backgroundColor: theme.background }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }}
+          bottomOffset={24}
+        >
+          <Animated.View style={styles.onboardingContent} entering={FadeInDown.duration(500).springify()}>
+            <View style={[styles.iconRing, { borderColor: theme.tint + "30", backgroundColor: theme.tint + "12" }]}>
+              <Ionicons name="lock-closed-outline" size={48} color={theme.tint} />
+            </View>
+
+            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+              Create Password
+            </Text>
+            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              Set a password to secure your account
+            </Text>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Password</Text>
+              <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: passwordError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
+                <Ionicons name="lock-closed-outline" size={18} color={passwordError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  placeholder="Minimum 6 characters"
+                  placeholderTextColor={theme.textMuted}
+                  secureTextEntry={!showNewPassword}
+                  value={newPassword}
+                  onChangeText={(t) => { setNewPassword(t); if (passwordError) setPasswordError(null); }}
+                  returnKeyType="next"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Pressable onPress={() => setShowNewPassword(!showNewPassword)} hitSlop={8}>
+                  <Ionicons name={showNewPassword ? "eye-off-outline" : "eye-outline"} size={18} color={theme.textMuted} />
+                </Pressable>
+              </View>
+              {passwordError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>{passwordError}</Text>}
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Confirm Password</Text>
+              <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: confirmPasswordError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
+                <Ionicons name="lock-closed-outline" size={18} color={confirmPasswordError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  placeholder="Re-enter your password"
+                  placeholderTextColor={theme.textMuted}
+                  secureTextEntry={!showConfirmPassword}
+                  value={confirmPassword}
+                  onChangeText={(t) => { setConfirmPassword(t); if (confirmPasswordError) setConfirmPasswordError(null); }}
+                  returnKeyType="done"
+                  onSubmitEditing={createAccountWithPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Pressable onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={8}>
+                  <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={18} color={theme.textMuted} />
+                </Pressable>
+              </View>
+              {confirmPasswordError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>{confirmPasswordError}</Text>}
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.continueBtn, { backgroundColor: theme.tint, opacity: (pressed || savingPassword) ? 0.85 : 1 }]}
+              onPress={createAccountWithPassword}
+              disabled={savingPassword}
+            >
+              {savingPassword ? <ActivityIndicator size="small" color="#000" /> : (
+                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text><Ionicons name="checkmark" size={18} color="#000" /></>
+              )}
+            </Pressable>
+
+            <Pressable onPress={() => { setOnboardingStep("verify"); setNewPassword(""); setConfirmPassword(""); }}>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                Back to verification
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </KeyboardAwareScrollViewCompat>
+      );
+    }
+
+    if (onboardingStep === "login") {
+      return (
+        <KeyboardAwareScrollViewCompat
+          style={{ flex: 1, backgroundColor: theme.background }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + webTop, paddingBottom: insets.bottom + webBottom }}
+          bottomOffset={24}
+        >
+          <Animated.View style={styles.onboardingContent} entering={FadeInDown.duration(500).springify()}>
+            <View style={[styles.iconRing, { borderColor: theme.tint + "30", backgroundColor: theme.tint + "12" }]}>
+              <Ionicons name="person-circle-outline" size={48} color={theme.tint} />
+            </View>
+
+            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+              Welcome Back
+            </Text>
+            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              Log in with your phone number and password
+            </Text>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Phone Number</Text>
+              <View style={styles.inputRow}>
+                <CountryPicker selected={selectedCountry} onSelect={setSelectedCountry} />
+                <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.border, flex: 1 }]}>
+                  <TextInput
+                    style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                    placeholder="Phone number"
+                    placeholderTextColor={theme.textMuted}
+                    keyboardType="phone-pad"
+                    value={loginPhone}
+                    onChangeText={(t) => { setLoginPhone(t.replace(/\D/g, "")); if (loginError) setLoginError(null); }}
+                    returnKeyType="next"
+                    maxLength={15}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Password</Text>
+              <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: loginError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
+                <Ionicons name="lock-closed-outline" size={18} color={loginError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  placeholder="Your password"
+                  placeholderTextColor={theme.textMuted}
+                  secureTextEntry={!showLoginPassword}
+                  value={loginPassword}
+                  onChangeText={(t) => { setLoginPassword(t); if (loginError) setLoginError(null); }}
+                  returnKeyType="done"
+                  onSubmitEditing={performLogin}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Pressable onPress={() => setShowLoginPassword(!showLoginPassword)} hitSlop={8}>
+                  <Ionicons name={showLoginPassword ? "eye-off-outline" : "eye-outline"} size={18} color={theme.textMuted} />
+                </Pressable>
+              </View>
+              {loginError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>{loginError}</Text>}
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.continueBtn, { backgroundColor: theme.tint, opacity: (pressed || loggingIn) ? 0.85 : 1 }]}
+              onPress={performLogin}
+              disabled={loggingIn}
+            >
+              {loggingIn ? <ActivityIndicator size="small" color="#000" /> : (
+                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Log In</Text><Ionicons name="arrow-forward" size={18} color="#000" /></>
+              )}
+            </Pressable>
+
+            <View style={styles.resendRow}>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>Don't have an account?</Text>
+              <Pressable onPress={() => { setOnboardingStep("register"); setLoginPhone(""); setLoginPassword(""); setLoginError(null); }}>
+                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>Create one</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+        </KeyboardAwareScrollViewCompat>
+      );
+    }
+
     return (
       <KeyboardAwareScrollViewCompat
         style={{ flex: 1, backgroundColor: theme.background }}
@@ -620,6 +851,13 @@ export default function HomeScreen() {
           <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
             Your number is never shown to other users
           </Text>
+
+          <View style={styles.resendRow}>
+            <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>Already have an account?</Text>
+            <Pressable onPress={() => { setOnboardingStep("login"); setLoginPhone(""); setLoginPassword(""); setLoginError(null); }}>
+              <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>Log in</Text>
+            </Pressable>
+          </View>
         </Animated.View>
       </KeyboardAwareScrollViewCompat>
     );
