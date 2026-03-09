@@ -36,6 +36,20 @@ const syncedKey = (phone: string) => `contacts_synced_${phone}`;
 
 const defaultCountry = countries[0];
 
+// Sort once at module load — longest dial codes first so "+212" matches before "+2"
+const countriesByDialLength = [...countries].sort(
+  (a, b) => b.dial.length - a.dial.length
+);
+
+function guessCountryFromPhone(phone: string): Country | null {
+  const digits = phone.replace(/\D/g, "");
+  for (const c of countriesByDialLength) {
+    const dialDigits = c.dial.replace("+", "");
+    if (digits.startsWith(dialDigits)) return c;
+  }
+  return null;
+}
+
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
@@ -105,13 +119,23 @@ export default function HomeScreen() {
       } catch {}
     }
     setSynced(syncedVal === "true");
-    if (countryCode) {
-      const found = countries.find((c) => c.code === countryCode);
-      if (found) {
-        setSelectedCountry(found);
-        setSearchCountry(found);
+
+    // Derive country from the stored phone number (most accurate source).
+    // Fall back to saved COUNTRY_KEY, then the default.
+    if (phone) {
+      const derived = guessCountryFromPhone(phone);
+      if (derived) {
+        setSelectedCountry(derived);
+        setSearchCountry(derived);
+      } else if (countryCode) {
+        const found = countries.find((c) => c.code === countryCode);
+        if (found) { setSelectedCountry(found); setSearchCountry(found); }
       }
+    } else if (countryCode) {
+      const found = countries.find((c) => c.code === countryCode);
+      if (found) { setSelectedCountry(found); setSearchCountry(found); }
     }
+
     setLoading(false);
   }
 
