@@ -27,6 +27,7 @@ const NAME_KEY = "user_name";
 const COUNTRY_KEY = "user_country";
 const AVATAR_KEY = "user_avatar";
 const syncedKey = (phone: string) => `contacts_synced_${phone}`;
+const removedKey = (phone: string) => `number_removed_${phone}`;
 const REMOVE_PHONE_COST = 3;
 
 export default function ProfileScreen() {
@@ -41,6 +42,7 @@ export default function ProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [numberRemoved, setNumberRemoved] = useState(false);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
@@ -58,6 +60,10 @@ export default function ProfileScreen() {
     setUserName(name);
     setUserPhone(phone);
     if (avatar) setAvatarUri(avatar);
+    if (phone) {
+      const removed = await AsyncStorage.getItem(removedKey(phone));
+      setNumberRemoved(removed === "true");
+    }
   }
 
   async function pickAvatar() {
@@ -109,6 +115,8 @@ export default function ProfileScreen() {
               const res = await fetch(url.toString(), { method: "DELETE" });
               if (res.ok) {
                 await addCoins(-REMOVE_PHONE_COST);
+                if (userPhone) await AsyncStorage.setItem(removedKey(userPhone), "true");
+                setNumberRemoved(true);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert("Done", "Your phone number has been removed from all search results.");
               } else {
@@ -234,31 +242,47 @@ export default function ProfileScreen() {
 
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-            <Pressable
-              style={({ pressed }) => [styles.row, { opacity: (pressed || removing) ? 0.7 : 1 }]}
-              onPress={handleRemovePhone}
-              disabled={removing}
-            >
-              <View style={[styles.rowIcon, { backgroundColor: "#FF9500" + "18" }]}>
-                {removing ? (
-                  <ActivityIndicator size="small" color="#FF9500" />
-                ) : (
-                  <Ionicons name="eye-off-outline" size={20} color="#FF9500" />
-                )}
+            {numberRemoved ? (
+              <View style={styles.row}>
+                <View style={[styles.rowIcon, { backgroundColor: "#00C9D4" + "18" }]}>
+                  <Ionicons name="checkmark-circle-outline" size={20} color="#00C9D4" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.rowLabel, { color: "#00C9D4", fontFamily: "Inter_500Medium" }]}>
+                    Your number is already removed from database
+                  </Text>
+                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                    Hidden from all search results
+                  </Text>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
-                  Remove My Number
-                </Text>
-                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                  Hide from search results
-                </Text>
-              </View>
-              <View style={styles.costBadge}>
-                <Ionicons name="diamond" size={11} color="#FFD700" />
-                <Text style={[styles.costText, { fontFamily: "Inter_700Bold" }]}>{REMOVE_PHONE_COST}</Text>
-              </View>
-            </Pressable>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.row, { opacity: (pressed || removing) ? 0.7 : 1 }]}
+                onPress={handleRemovePhone}
+                disabled={removing}
+              >
+                <View style={[styles.rowIcon, { backgroundColor: "#FF9500" + "18" }]}>
+                  {removing ? (
+                    <ActivityIndicator size="small" color="#FF9500" />
+                  ) : (
+                    <Ionicons name="eye-off-outline" size={20} color="#FF9500" />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
+                    Remove My Number
+                  </Text>
+                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                    Hide from search results
+                  </Text>
+                </View>
+                <View style={styles.costBadge}>
+                  <Ionicons name="diamond" size={11} color="#FFD700" />
+                  <Text style={[styles.costText, { fontFamily: "Inter_700Bold" }]}>{REMOVE_PHONE_COST}</Text>
+                </View>
+              </Pressable>
+            )}
           </View>
         </Animated.View>
 
