@@ -201,21 +201,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/contacts/number", async (req: Request, res: Response) => {
-    const phone = req.query.phone as string;
-    if (!phone || phone.length < 7) {
-      return res.status(400).json({ error: "Invalid phone number" });
-    }
-    try {
-      const normalized = phone.replace(/\D/g, "");
-      const result = await pool.query("SELECT 1 FROM removed_numbers WHERE phone = $1 LIMIT 1", [normalized]);
-      return res.json({ removed: result.rowCount > 0 });
-    } catch (err) {
-      console.error("Check removed error:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  });
-
   app.delete("/api/contacts/number", async (req: Request, res: Response) => {
     const phone = req.query.phone as string;
     if (!phone || phone.length < 7) {
