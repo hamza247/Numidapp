@@ -7,7 +7,6 @@ import {
   Modal,
   FlatList,
   TextInput,
-  Image,
   useColorScheme,
   Platform,
 } from "react-native";
@@ -16,23 +15,12 @@ import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { countries, type Country } from "@/lib/countries";
 
-function FlagImage({ code, size = 24 }: { code: string; size?: number }) {
-  return (
-    <Image
-      source={{ uri: `https://flagcdn.com/w80/${code.toLowerCase()}.png` }}
-      style={{ width: size * 1.5, height: size, borderRadius: 3 }}
-      resizeMode="cover"
-    />
-  );
-}
-
 interface CountryPickerProps {
   selected: Country;
   onSelect: (country: Country) => void;
-  compact?: boolean;
 }
 
-export default function CountryPicker({ selected, onSelect, compact }: CountryPickerProps) {
+export default function CountryPicker({ selected, onSelect }: CountryPickerProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
@@ -62,7 +50,7 @@ export default function CountryPicker({ selected, onSelect, compact }: CountryPi
         ]}
         onPress={() => setVisible(true)}
       >
-        <FlagImage code={selected.code} size={compact ? 18 : 22} />
+        <Text style={styles.flag}>{selected.flag}</Text>
         <Text style={[styles.dial, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
           {selected.dial}
         </Text>
@@ -124,7 +112,7 @@ export default function CountryPicker({ selected, onSelect, compact }: CountryPi
                       setSearch("");
                     }}
                   >
-                    <FlagImage code={item.code} size={24} />
+                    <Text style={styles.rowFlag}>{item.flag}</Text>
                     <View style={styles.rowInfo}>
                       <Text style={[styles.rowName, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
                         {item.name}
@@ -162,6 +150,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     height: 52,
     marginRight: 8,
+  },
+  flag: {
+    fontSize: 20,
   },
   dial: {
     fontSize: 15,
@@ -218,6 +209,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  rowFlag: {
+    fontSize: 28,
   },
   rowInfo: {
     flex: 1,
