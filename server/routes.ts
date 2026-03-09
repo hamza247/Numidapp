@@ -7,7 +7,13 @@ import { z } from "zod";
 
 async function getStripeSettings(): Promise<Record<string, string>> {
   const result = await pool.query(
-    "SELECT key, value FROM app_settings WHERE key IN ('stripe_enabled','stripe_mode','stripe_sk_test','stripe_sk_live','stripe_currency','stripe_webhook_secret')"
+    `SELECT key, value FROM app_settings WHERE key IN (
+      'stripe_enabled','stripe_mode','stripe_sk_test','stripe_sk_live',
+      'stripe_currency','stripe_webhook_secret',
+      'stripe_product_name','stripe_product_desc','stripe_product_image',
+      'stripe_checkout_message','stripe_locale',
+      'stripe_allow_promo_codes','stripe_collect_billing'
+    )`
   );
   const s: Record<string, string> = {};
   for (const row of result.rows) s[row.key] = row.value;
@@ -546,28 +552,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrl = `${proto}://${host}`;
       const currency = settings.stripe_currency || "usd";
 
-      const session = await stripe.checkout.sessions.create({
+      const coinsStr = String(coins);
+      const productName = (settings.stripe_product_name || "{coins} Coins — Who Saved Me").replace("{coins}", coinsStr);
+      const productDesc = (settings.stripe_product_desc || "Add {coins} coins to your Who Saved Me account instantly.").replace("{coins}", coinsStr);
+      const productImage = settings.stripe_product_image?.trim();
+      const checkoutMsg  = settings.stripe_checkout_message?.trim();
+      const locale       = (settings.stripe_locale || "auto") as any;
+      const allowPromo   = settings.stripe_allow_promo_codes === "1";
+      const collectBill  = settings.stripe_collect_billing === "1";
+
+      const sessionParams: any = {
         payment_method_types: ["card"],
         line_items: [{
           price_data: {
             currency,
             product_data: {
-              name: `${coins} Coins — Who Saved Me`,
-              description: `Add ${coins} coins to your account`,
+              name: productName,
+              description: productDesc || undefined,
+              ...(productImage ? { images: [productImage] } : {}),
             },
             unit_amount: Math.round(Number(priceInCents)),
           },
           quantity: 1,
         }],
         mode: "payment",
+        locale,
+        allow_promotion_codes: allowPromo,
+        billing_address_collection: collectBill ? "required" : "auto",
         success_url: `${baseUrl}/api/payment/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/api/payment/cancel`,
         metadata: {
           phone: String(phone),
-          coins: String(coins),
+          coins: coinsStr,
           packageId: String(packageId),
         },
-      });
+      };
+
+      if (checkoutMsg) {
+        sessionParams.custom_text = {
+          submit: { message: checkoutMsg.slice(0, 500) },
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
 
       return res.json({ url: session.url, sessionId: session.id });
     } catch (err: any) {
