@@ -892,7 +892,7 @@ export default function HomeScreen() {
           style={[styles.header, { paddingTop: insets.top + 16 + webTop }]}
           entering={FadeInDown.duration(400)}
         >
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
               Who Saved Me
             </Text>
@@ -910,33 +910,6 @@ export default function HomeScreen() {
                 {coins}
               </Text>
             </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.syncBtn, { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.7 : 1 }]}
-              onPress={() => router.push("/profile")}
-            >
-              <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
-            </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.syncBtn,
-              {
-                backgroundColor: synced ? theme.tint + "20" : theme.card,
-                borderColor: synced ? theme.tint + "40" : theme.border,
-                opacity: pressed ? 0.7 : 1,
-              },
-            ]}
-            onPress={syncContacts}
-          >
-            {syncing ? (
-              <ActivityIndicator size="small" color={theme.tint} />
-            ) : (
-              <Ionicons
-                name={synced ? "cloud-done" : "cloud-upload-outline"}
-                size={20}
-                color={synced ? theme.tint : theme.textSecondary}
-              />
-            )}
-          </Pressable>
           </View>
         </Animated.View>
 
@@ -1214,10 +1187,13 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 24,
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 28,
@@ -1227,9 +1203,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headerActions: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "flex-end",
   },
   coinBadge: {
     flexDirection: "row",
