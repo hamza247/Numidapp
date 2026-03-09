@@ -52,7 +52,7 @@ export default function ProfileScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, addCoins, refreshCoins } = useCoins();
-  const { t, language, setLanguage, fonts } = useLanguage();
+  const { t, language, setLanguage, fonts, isRTL } = useLanguage();
 
   const [userName, setUserName] = useState<string | null>(null);
   const [userPhone, setUserPhone] = useState<string | null>(null);
@@ -246,11 +246,16 @@ export default function ProfileScreen() {
 
   const currentLang = LANG_OPTIONS.find((l) => l.code === language);
 
+  const rowDir = isRTL ? "row-reverse" : ("row" as const);
+  const textAlign = isRTL ? ("right" as const) : ("left" as const);
+  const labelMargin = isRTL ? { marginRight: 4, marginLeft: 0 } : { marginLeft: 4, marginRight: 0 };
+  const dividerMargin = isRTL ? { marginRight: 64, marginLeft: 0 } : { marginLeft: 64, marginRight: 0 };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.headerBar, { paddingTop: insets.top + webTop, backgroundColor: theme.background, borderBottomColor: theme.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={theme.text} />
+      <View style={[styles.headerBar, { paddingTop: insets.top + webTop, backgroundColor: theme.background, borderBottomColor: theme.border, flexDirection: isRTL ? "row-reverse" : "row" }]}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={[styles.backBtn, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+          <Ionicons name={isRTL ? "chevron-forward" : "chevron-back"} size={24} color={theme.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.semiBold }]}>{t.profile}</Text>
         <View style={{ width: 40 }} />
@@ -283,39 +288,39 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.account}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.account}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
-              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
               onPress={pickAvatar}
             >
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="image-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.tapToChange}</Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.tapToChange}</Text>
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
             </Pressable>
 
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <View style={[styles.divider, { backgroundColor: theme.border, ...dividerMargin }]} />
 
             {numberRemoved ? (
-              <View style={styles.row}>
+              <View style={[styles.row, { flexDirection: rowDir }]}>
                 <View style={[styles.rowIcon, { backgroundColor: "#00C9D4" + "18" }]}>
                   <Ionicons name="checkmark-circle-outline" size={20} color="#00C9D4" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowLabel, { color: "#00C9D4", fontFamily: fonts.medium }]}>
+                  <Text style={[styles.rowLabel, { color: "#00C9D4", fontFamily: fonts.medium, textAlign }]}>
                     {t.numberRemoved}
                   </Text>
-                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
+                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular, textAlign }]}>
                     {t.numberRemovedSub}
                   </Text>
                 </View>
               </View>
             ) : (
               <Pressable
-                style={({ pressed }) => [styles.row, { opacity: (pressed || removing) ? 0.7 : 1 }]}
+                style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: (pressed || removing) ? 0.7 : 1 }]}
                 onPress={handleRemovePhone}
                 disabled={removing}
               >
@@ -327,10 +332,10 @@ export default function ProfileScreen() {
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>
+                  <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>
                     {t.removeMyNumber}
                   </Text>
-                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
+                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular, textAlign }]}>
                     {t.removeMyNumberSub}
                   </Text>
                 </View>
@@ -344,93 +349,93 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(130).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.preferences}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.preferences}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
-              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
               onPress={() => setShowLangPicker(true)}
             >
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="language-outline" size={20} color={theme.tint} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.language}</Text>
-                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
+                <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.language}</Text>
+                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular, textAlign }]}>
                   {currentLang?.flag} {currentLang?.native}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
             </Pressable>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.session}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.session}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
-              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
               onPress={handleLogout}
             >
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="log-out-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.logOut}</Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.logOut}</Text>
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
             </Pressable>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(220).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.legal}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.legal}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
-              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
               onPress={() => router.push({ pathname: "/legal", params: { type: "privacy" } })}
             >
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="shield-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.privacyPolicy}</Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.privacyPolicy}</Text>
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
             </Pressable>
 
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <View style={[styles.divider, { backgroundColor: theme.border, ...dividerMargin }]} />
 
             <Pressable
-              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
               onPress={() => router.push({ pathname: "/legal", params: { type: "terms" } })}
             >
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="document-text-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.termsConditions}</Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.termsConditions}</Text>
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
             </Pressable>
 
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <View style={[styles.divider, { backgroundColor: theme.border, ...dividerMargin }]} />
 
             <Pressable
-              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
               onPress={() => router.push({ pathname: "/legal", params: { type: "about" } })}
             >
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="information-circle-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.about}</Text>
-              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.about}</Text>
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
             </Pressable>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.destructive + "AA", fontFamily: fonts.semiBold }]}>{t.dangerZone}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.destructive + "AA", fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.dangerZone}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
-              style={({ pressed }) => [styles.row, { opacity: (pressed || deleting) ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: (pressed || deleting) ? 0.7 : 1 }]}
               onPress={handleDeleteAccount}
               disabled={deleting}
             >
@@ -442,14 +447,14 @@ export default function ProfileScreen() {
                 )}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: theme.destructive, fontFamily: fonts.medium }]}>
+                <Text style={[styles.rowLabel, { color: theme.destructive, fontFamily: fonts.medium, textAlign }]}>
                   {t.deleteAccount}
                 </Text>
-                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
+                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular, textAlign }]}>
                   {t.deleteAccountSub}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.destructive + "80"} />
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.destructive + "80"} />
             </Pressable>
           </View>
         </Animated.View>
@@ -470,15 +475,15 @@ export default function ProfileScreen() {
               <React.Fragment key={opt.code}>
                 {idx > 0 && <View style={[styles.langDivider, { backgroundColor: theme.border }]} />}
                 <Pressable
-                  style={({ pressed }) => [styles.langRow, { opacity: pressed ? 0.7 : 1 }]}
+                  style={({ pressed }) => [styles.langRow, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
                   onPress={() => handleSelectLanguage(opt.code)}
                 >
                   <Text style={styles.langFlag}>{opt.flag}</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.langNative, { color: theme.text, fontFamily: fonts.semiBold }]}>
+                    <Text style={[styles.langNative, { color: theme.text, fontFamily: fonts.semiBold, textAlign }]}>
                       {opt.native}
                     </Text>
-                    <Text style={[styles.langEnglish, { color: theme.textMuted, fontFamily: fonts.regular }]}>
+                    <Text style={[styles.langEnglish, { color: theme.textMuted, fontFamily: fonts.regular, textAlign }]}>
                       {opt.label}
                     </Text>
                   </View>
