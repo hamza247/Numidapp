@@ -53,6 +53,7 @@ export const profiles = pgTable("profiles", {
   countryCode: varchar("country_code", { length: 5 }).notNull(),
   passwordHash: text("password_hash"),
   coins: integer("coins").notNull().default(5),
+  avatarBase64: text("avatar_base64"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

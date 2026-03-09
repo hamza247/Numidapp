@@ -259,6 +259,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json({ profile });
   });
 
+  app.put("/api/profile/avatar", async (req: Request, res: Response) => {
+    const { phone, avatarBase64 } = req.body;
+    if (!phone || phone.length < 7) return res.status(400).json({ error: "Invalid phone" });
+    try {
+      await pool.query(
+        "UPDATE profiles SET avatar_base64 = $1 WHERE phone = $2",
+        [avatarBase64 || null, phone.replace(/\D/g, "")]
+      );
+      return res.json({ ok: true });
+    } catch (err) {
+      console.error("Avatar update error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
   app.post("/api/contacts/upload", async (req: Request, res: Response) => {
     try {
       const parsed = uploadSchema.safeParse(req.body);

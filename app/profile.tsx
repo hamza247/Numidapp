@@ -53,30 +53,32 @@ export default function ProfileScreen() {
   }, []);
 
   async function loadProfile() {
-    const [name, phone, avatar] = await Promise.all([
+    const [name, phone] = await Promise.all([
       AsyncStorage.getItem(NAME_KEY),
       AsyncStorage.getItem(PHONE_KEY),
-      AsyncStorage.getItem(AVATAR_KEY),
     ]);
     setUserName(name);
     setUserPhone(phone);
-    if (avatar) setAvatarUri(avatar);
     if (phone) {
       try {
         const base = getApiUrl();
-        const url = new URL(`/api/contacts/number/status?phone=${encodeURIComponent(phone)}`, base);
-        const res = await fetch(url.toString());
-        if (res.ok) {
-          const data = await res.json();
-          if (data.removed) {
-            setNumberRemoved(true);
-            await AsyncStorage.setItem(removedKey(phone), "true");
-          } else {
-            setNumberRemoved(false);
-            await AsyncStorage.removeItem(removedKey(phone));
+        const [profileRes, statusRes] = await Promise.all([
+          fetch(new URL(`/api/profile?phone=${encodeURIComponent(phone)}`, base).toString()),
+          fetch(new URL(`/api/contacts/number/status?phone=${encodeURIComponent(phone)}`, base).toString()),
+        ]);
+        if (profileRes.ok) {
+          const { profile } = await profileRes.json();
+          if (profile?.avatarBase64) {
+            setAvatarUri(`data:image/jpeg;base64,${profile.avatarBase64}`);
           }
         }
+        if (statusRes.ok) {
+          const data = await statusRes.json();
+          setNumberRemoved(!!data.removed);
+        }
       } catch {
+        const localAvatar = await AsyncStorage.getItem(AVATAR_KEY);
+        if (localAvatar) setAvatarUri(localAvatar);
         const localRemoved = await AsyncStorage.getItem(removedKey(phone));
         setNumberRemoved(localRemoved === "true");
       }
@@ -93,13 +95,23 @@ export default function ProfileScreen() {
       mediaTypes: "images",
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.7,
+      quality: 0.5,
+      base64: true,
     });
-    if (!result.canceled && result.assets[0]?.uri) {
-      const uri = result.assets[0].uri;
+    if (!result.canceled && result.assets[0]) {
+      const { uri, base64 } = result.assets[0];
       setAvatarUri(uri);
-      await AsyncStorage.setItem(AVATAR_KEY, uri);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (base64 && userPhone) {
+        try {
+          const apiBase = getApiUrl();
+          await fetch(new URL("/api/profile/avatar", apiBase).toString(), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone: userPhone, avatarBase64: base64 }),
+          });
+        } catch {}
+      }
     }
   }
 
@@ -266,7 +278,7 @@ export default function ProfileScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: "#00C9D4", fontFamily: "Inter_500Medium" }]}>
-                    Your number is already removed from database
+                    Number Removed
                   </Text>
                   <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
                     Hidden from all search results
