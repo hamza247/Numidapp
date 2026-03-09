@@ -47,7 +47,7 @@ function PackageCard({
   onPurchase: () => void;
   purchasing: boolean;
 }) {
-  const { t } = useLanguage();
+  const { t, fonts } = useLanguage();
   const pricePerCoin = (pkg.price / pkg.coins).toFixed(2);
   const highlight = pkg.popular || pkg.bestValue;
   const labelMap: Record<string, string> = {
@@ -90,7 +90,7 @@ function PackageCard({
               styles.packageLabelText,
               {
                 color: pkg.popular || pkg.bestValue ? "#000" : theme.tint,
-                fontFamily: "Inter_700Bold",
+                fontFamily: fonts.bold,
               },
             ]}
           >
@@ -102,11 +102,11 @@ function PackageCard({
       <View style={styles.packageTop}>
         <View style={styles.packageCoinsRow}>
           <Ionicons name="diamond" size={22} color="#FFD700" />
-          <Text style={[styles.packageCoinsCount, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+          <Text style={[styles.packageCoinsCount, { color: theme.text, fontFamily: fonts.bold }]}>
             {pkg.coins}
           </Text>
         </View>
-        <Text style={[styles.packagePerCoin, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+        <Text style={[styles.packagePerCoin, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
           ${pricePerCoin} {t.perCoin}
         </Text>
       </View>
@@ -127,7 +127,7 @@ function PackageCard({
               styles.packagePriceText,
               {
                 color: highlight ? "#000" : theme.tint,
-                fontFamily: "Inter_700Bold",
+                fontFamily: fonts.bold,
               },
             ]}
           >
@@ -145,7 +145,7 @@ export default function StoreScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, addCoins } = useCoins();
-  const { t } = useLanguage();
+  const { t, fonts } = useLanguage();
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
@@ -187,13 +187,13 @@ export default function StoreScreen() {
           <Ionicons name="arrow-back" size={20} color={theme.text} />
         </Pressable>
 
-        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.bold }]}>
           {t.coinStore}
         </Text>
 
         <View style={[styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40" }]}>
           <Ionicons name="diamond" size={14} color="#FFD700" />
-          <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
+          <Text style={[styles.coinText, { color: "#FFD700", fontFamily: fonts.bold }]}>
             {coins}
           </Text>
         </View>
@@ -212,10 +212,10 @@ export default function StoreScreen() {
               <Ionicons name="diamond" size={32} color="#FFD700" />
             </View>
             <View style={styles.balanceInfo}>
-              <Text style={[styles.balanceCount, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
+              <Text style={[styles.balanceCount, { color: "#FFD700", fontFamily: fonts.bold }]}>
                 {coins}
               </Text>
-              <Text style={[styles.balanceLabel, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.balanceLabel, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
                 {t.coinsRemaining}
               </Text>
             </View>
@@ -223,10 +223,10 @@ export default function StoreScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-          <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>
             {t.coinPackages}
           </Text>
-          <Text style={[styles.sectionSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.sectionSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
             {t.coinPackagesSub}
           </Text>
         </Animated.View>
@@ -248,19 +248,19 @@ export default function StoreScreen() {
           <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.infoRow}>
               <Ionicons name="shield-checkmark-outline" size={18} color={theme.tint} />
-              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
                 {t.securePayment}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons name="infinite-outline" size={18} color={theme.tint} />
-              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
                 {t.coinsNeverExpire}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons name="flash-outline" size={18} color={theme.tint} />
-              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
                 {t.instantDelivery}
               </Text>
             </View>

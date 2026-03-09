@@ -5,6 +5,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import { useFonts as useLocalFonts } from "expo-font";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -25,7 +26,7 @@ SplashScreen.preventAutoHideAsync();
 
 function MaintenanceScreen({ onRetry }: { onRetry: () => void }) {
   const insets = useSafeAreaInsets();
-  const { t } = useLanguage();
+  const { t, fonts } = useLanguage();
   return (
     <View style={[styles.maintenanceContainer, {
       paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0),
@@ -35,26 +36,26 @@ function MaintenanceScreen({ onRetry }: { onRetry: () => void }) {
         <View style={styles.maintenanceIconRing}>
           <Ionicons name="construct" size={48} color="#00C9D4" />
         </View>
-        <Text style={styles.maintenanceTitle}>{t.underMaintenance}</Text>
-        <Text style={styles.maintenanceSubtitle}>{t.maintenanceSub}</Text>
+        <Text style={[styles.maintenanceTitle, { fontFamily: fonts.bold }]}>{t.underMaintenance}</Text>
+        <Text style={[styles.maintenanceSubtitle, { fontFamily: fonts.regular }]}>{t.maintenanceSub}</Text>
         <View style={styles.maintenanceDivider} />
         <View style={styles.maintenanceMeta}>
           <View style={styles.maintenanceMetaRow}>
             <Ionicons name="time-outline" size={16} color="#6B7280" />
-            <Text style={styles.maintenanceMetaText}>{t.scheduledMaintenance}</Text>
+            <Text style={[styles.maintenanceMetaText, { fontFamily: fonts.regular }]}>{t.scheduledMaintenance}</Text>
           </View>
           <View style={styles.maintenanceMetaRow}>
             <Ionicons name="shield-checkmark-outline" size={16} color="#6B7280" />
-            <Text style={styles.maintenanceMetaText}>{t.dataSafe}</Text>
+            <Text style={[styles.maintenanceMetaText, { fontFamily: fonts.regular }]}>{t.dataSafe}</Text>
           </View>
           <View style={styles.maintenanceMetaRow}>
             <Ionicons name="notifications-outline" size={16} color="#6B7280" />
-            <Text style={styles.maintenanceMetaText}>{t.notifyBack}</Text>
+            <Text style={[styles.maintenanceMetaText, { fontFamily: fonts.regular }]}>{t.notifyBack}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.maintenanceRetry} onPress={onRetry} activeOpacity={0.7}>
           <Ionicons name="refresh-outline" size={16} color="#00C9D4" />
-          <Text style={styles.maintenanceRetryText}>{t.checkAgain}</Text>
+          <Text style={[styles.maintenanceRetryText, { fontFamily: fonts.semiBold }]}>{t.checkAgain}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -127,12 +128,19 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
+  const [interLoaded, interError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
+  const [arabicLoaded, arabicError] = useLocalFonts({
+    JannaLTBold: require("../assets/fonts/JannaLTBold.ttf"),
+  });
+
+  const fontsLoaded = interLoaded && arabicLoaded;
+  const fontError = interError || arabicError;
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

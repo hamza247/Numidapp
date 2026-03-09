@@ -52,7 +52,7 @@ export default function ProfileScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, addCoins, refreshCoins } = useCoins();
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language, setLanguage, fonts } = useLanguage();
 
   const [userName, setUserName] = useState<string | null>(null);
   const [userPhone, setUserPhone] = useState<string | null>(null);
@@ -252,7 +252,7 @@ export default function ProfileScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={theme.text} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>{t.profile}</Text>
+        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.semiBold }]}>{t.profile}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -266,7 +266,7 @@ export default function ProfileScreen() {
               <Image source={{ uri: avatarUri }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatarPlaceholder, { backgroundColor: theme.tint + "20" }]}>
-                <Text style={[styles.initials, { color: theme.tint, fontFamily: "Inter_700Bold" }]}>{initials}</Text>
+                <Text style={[styles.initials, { color: theme.tint, fontFamily: fonts.bold }]}>{initials}</Text>
               </View>
             )}
             <View style={[styles.cameraOverlay, { backgroundColor: theme.tint }]}>
@@ -274,16 +274,16 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
 
-          <Text style={[styles.name, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+          <Text style={[styles.name, { color: theme.text, fontFamily: fonts.bold }]}>
             {userName ?? "User"}
           </Text>
-          <Text style={[styles.phone, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.phone, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             +{userPhone}
           </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.account}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.account}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -293,7 +293,7 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="image-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.tapToChange}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.tapToChange}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
 
@@ -305,10 +305,10 @@ export default function ProfileScreen() {
                   <Ionicons name="checkmark-circle-outline" size={20} color="#00C9D4" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowLabel, { color: "#00C9D4", fontFamily: "Inter_500Medium" }]}>
+                  <Text style={[styles.rowLabel, { color: "#00C9D4", fontFamily: fonts.medium }]}>
                     {t.numberRemoved}
                   </Text>
-                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                     {t.numberRemovedSub}
                   </Text>
                 </View>
@@ -327,16 +327,16 @@ export default function ProfileScreen() {
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
+                  <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>
                     {t.removeMyNumber}
                   </Text>
-                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                  <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                     {t.removeMyNumberSub}
                   </Text>
                 </View>
                 <View style={styles.costBadge}>
                   <Ionicons name="diamond" size={11} color="#FFD700" />
-                  <Text style={[styles.costText, { fontFamily: "Inter_700Bold" }]}>{REMOVE_PHONE_COST}</Text>
+                  <Text style={[styles.costText, { fontFamily: fonts.bold }]}>{REMOVE_PHONE_COST}</Text>
                 </View>
               </Pressable>
             )}
@@ -344,7 +344,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(130).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.preferences}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.preferences}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -355,8 +355,8 @@ export default function ProfileScreen() {
                 <Ionicons name="language-outline" size={20} color={theme.tint} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.language}</Text>
-                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.language}</Text>
+                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                   {currentLang?.flag} {currentLang?.native}
                 </Text>
               </View>
@@ -366,7 +366,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.session}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.session}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -376,14 +376,14 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="log-out-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.logOut}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.logOut}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(220).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.legal}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold }]}>{t.legal}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -393,7 +393,7 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="shield-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.privacyPolicy}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.privacyPolicy}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
 
@@ -406,7 +406,7 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="document-text-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.termsConditions}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.termsConditions}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
 
@@ -419,14 +419,14 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="information-circle-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.about}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium }]}>{t.about}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.destructive + "AA", fontFamily: "Inter_600SemiBold" }]}>{t.dangerZone}</Text>
+          <Text style={[styles.sectionLabel, { color: theme.destructive + "AA", fontFamily: fonts.semiBold }]}>{t.dangerZone}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -442,10 +442,10 @@ export default function ProfileScreen() {
                 )}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: theme.destructive, fontFamily: "Inter_500Medium" }]}>
+                <Text style={[styles.rowLabel, { color: theme.destructive, fontFamily: fonts.medium }]}>
                   {t.deleteAccount}
                 </Text>
-                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                   {t.deleteAccountSub}
                 </Text>
               </View>
@@ -463,7 +463,7 @@ export default function ProfileScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setShowLangPicker(false)}>
           <Pressable style={[styles.langModal, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Text style={[styles.langModalTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.langModalTitle, { color: theme.text, fontFamily: fonts.bold }]}>
               {t.selectLanguage}
             </Text>
             {LANG_OPTIONS.map((opt, idx) => (
@@ -475,10 +475,10 @@ export default function ProfileScreen() {
                 >
                   <Text style={styles.langFlag}>{opt.flag}</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.langNative, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
+                    <Text style={[styles.langNative, { color: theme.text, fontFamily: fonts.semiBold }]}>
                       {opt.native}
                     </Text>
-                    <Text style={[styles.langEnglish, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                    <Text style={[styles.langEnglish, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                       {opt.label}
                     </Text>
                   </View>

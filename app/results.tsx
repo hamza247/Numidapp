@@ -74,7 +74,7 @@ function ResultCard({
   index: number;
   theme: typeof Colors.dark;
 }) {
-  const { t } = useLanguage();
+  const { t, fonts } = useLanguage();
   const labelStyle = getLabelStyle(item.label, theme);
   const avatarColor = getAvatarColor(item.storedName, theme);
   const initials = getInitials(item.storedName);
@@ -83,14 +83,14 @@ function ResultCard({
     <Animated.View entering={FadeInDown.delay(idx * 50).duration(350).springify()}>
       <View style={[styles.resultCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={[styles.avatar, { backgroundColor: avatarColor + "20", borderColor: avatarColor + "35" }]}>
-          <Text style={[styles.avatarText, { color: avatarColor, fontFamily: "Inter_700Bold" }]}>
+          <Text style={[styles.avatarText, { color: avatarColor, fontFamily: fonts.bold }]}>
             {initials}
           </Text>
         </View>
 
         <View style={styles.resultInfo}>
           <Text
-            style={[styles.resultName, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}
+            style={[styles.resultName, { color: theme.text, fontFamily: fonts.semiBold }]}
             numberOfLines={1}
           >
             {item.storedName}
@@ -99,7 +99,7 @@ function ResultCard({
           <View style={styles.resultMetaRow}>
             <View style={[styles.labelBadgeSmall, { backgroundColor: labelStyle.bg }]}>
               <Ionicons name={labelStyle.icon} size={11} color={labelStyle.text} />
-              <Text style={[styles.labelSmallText, { color: labelStyle.text, fontFamily: "Inter_500Medium" }]}>
+              <Text style={[styles.labelSmallText, { color: labelStyle.text, fontFamily: fonts.medium }]}>
                 {labelStyle.display}
               </Text>
             </View>
@@ -107,7 +107,7 @@ function ResultCard({
 
           <View style={styles.uploaderRow}>
             <Ionicons name="person-outline" size={13} color={theme.textSecondary} />
-            <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
               {t.savedBy} {item.uploaderName}
             </Text>
           </View>
@@ -128,7 +128,7 @@ export default function ResultsScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins } = useCoins();
-  const { t } = useLanguage();
+  const { t, fonts } = useLanguage();
 
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,11 +192,11 @@ export default function ResultsScreen() {
         <View style={styles.headerCenter}>
           <View style={styles.headerPhoneRow}>
             <Text style={styles.headerFlag}>{country.flag}</Text>
-            <Text style={[styles.headerNumber, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.headerNumber, { color: theme.text, fontFamily: fonts.bold }]}>
               {country.dial} {localNumber ?? phone}
             </Text>
           </View>
-          <Text style={[styles.headerCountry, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.headerCountry, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             {country.name}
           </Text>
         </View>
@@ -206,7 +206,7 @@ export default function ResultsScreen() {
           onPress={() => router.push("/store")}
         >
           <Ionicons name="diamond" size={14} color="#FFD700" />
-          <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
+          <Text style={[styles.coinText, { color: "#FFD700", fontFamily: fonts.bold }]}>
             {coins}
           </Text>
         </Pressable>
@@ -215,7 +215,7 @@ export default function ResultsScreen() {
       {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.tint} />
-          <Text style={[styles.loadingText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.loadingText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             {t.searchingContacts}
           </Text>
         </View>
@@ -224,14 +224,14 @@ export default function ResultsScreen() {
       {error && !loading && (
         <Animated.View style={styles.errorContainer} entering={FadeInDown.duration(400)}>
           <Ionicons name="alert-circle-outline" size={48} color={theme.destructive} />
-          <Text style={[styles.errorText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.errorText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             {t.failedToLoad}
           </Text>
           <Pressable
             style={[styles.retryBtn, { backgroundColor: theme.tint }]}
             onPress={() => phone && loadResults(phone)}
           >
-            <Text style={[styles.retryText, { fontFamily: "Inter_600SemiBold" }]}>{t.tryAgain}</Text>
+            <Text style={[styles.retryText, { fontFamily: fonts.semiBold }]}>{t.tryAgain}</Text>
           </Pressable>
         </Animated.View>
       )}
@@ -241,10 +241,10 @@ export default function ResultsScreen() {
           <View style={[styles.emptyIconRing, { borderColor: theme.border, backgroundColor: theme.card }]}>
             <Ionicons name="person-outline" size={40} color={theme.textMuted} />
           </View>
-          <Text style={[styles.emptyTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
+          <Text style={[styles.emptyTitle, { color: theme.text, fontFamily: fonts.semiBold }]}>
             {t.notSavedYet}
           </Text>
-          <Text style={[styles.emptyBody, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.emptyBody, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             {t.notSavedBody}
           </Text>
         </Animated.View>
@@ -276,10 +276,10 @@ export default function ResultsScreen() {
                     <Ionicons name="people" size={24} color={theme.tint} />
                   </View>
                   <View style={styles.statsTextWrap}>
-                    <Text style={[styles.statsCount, { color: theme.tint, fontFamily: "Inter_700Bold" }]}>
+                    <Text style={[styles.statsCount, { color: theme.tint, fontFamily: fonts.bold }]}>
                       {results.length}
                     </Text>
-                    <Text style={[styles.statsLabel, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                    <Text style={[styles.statsLabel, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
                       {t.personSaved(results.length)}
                     </Text>
                   </View>
@@ -291,7 +291,7 @@ export default function ResultsScreen() {
                     return (
                       <View key={label} style={styles.breakdownItem}>
                         <View style={[styles.breakdownDot, { backgroundColor: ls.text }]} />
-                        <Text style={[styles.breakdownText, { color: theme.textSecondary, fontFamily: "Inter_500Medium" }]}>
+                        <Text style={[styles.breakdownText, { color: theme.textSecondary, fontFamily: fonts.medium }]}>
                           {t.savedAs(count, label)}
                         </Text>
                       </View>
@@ -300,7 +300,7 @@ export default function ResultsScreen() {
                 </View>
               </View>
 
-              <Text style={[styles.detailsHeader, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+              <Text style={[styles.detailsHeader, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>
                 {t.contactsDetails}
               </Text>
             </Animated.View>

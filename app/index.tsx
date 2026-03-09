@@ -42,7 +42,7 @@ export default function HomeScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, freeSearchesRemaining, spendSearch, loaded: coinsLoaded, refreshCoins } = useCoins();
-  const { t } = useLanguage();
+  const { t, fonts } = useLanguage();
 
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -500,12 +500,12 @@ export default function HomeScreen() {
               <Ionicons name="shield-checkmark-outline" size={48} color="#FFD700" />
             </View>
 
-            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: fonts.bold }]}>
               {t.verifyTitle}
             </Text>
-            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
               {t.verifySubtitle}{"\n"}
-              <Text style={{ color: theme.tint, fontFamily: "Inter_600SemiBold" }}>
+              <Text style={{ color: theme.tint, fontFamily: fonts.semiBold }}>
                 +{pendingPhone}
               </Text>
             </Text>
@@ -529,7 +529,7 @@ export default function HomeScreen() {
                       },
                     ]}
                   >
-                    <Text style={[styles.otpDigit, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+                    <Text style={[styles.otpDigit, { color: theme.text, fontFamily: fonts.bold }]}>
                       {otpCode[i] ?? ""}
                     </Text>
                   </View>
@@ -553,7 +553,7 @@ export default function HomeScreen() {
             />
 
             {otpError && (
-              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular", textAlign: "center" }]}>
+              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: fonts.regular, textAlign: "center" }]}>
                 {otpError}
               </Text>
             )}
@@ -570,25 +570,25 @@ export default function HomeScreen() {
                 <ActivityIndicator size="small" color="#000" />
               ) : (
                 <>
-                  <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.verify}</Text>
+                  <Text style={[styles.continueBtnText, { fontFamily: fonts.semiBold }]}>{t.verify}</Text>
                   <Ionicons name="checkmark" size={18} color="#000" />
                 </>
               )}
             </Pressable>
 
             <View style={styles.resendRow}>
-              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                 {t.didntReceive}
               </Text>
               <Pressable onPress={resendOtpCode} disabled={sendingOtp}>
-                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold", opacity: sendingOtp ? 0.5 : 1 }]}>
+                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: fonts.semiBold, opacity: sendingOtp ? 0.5 : 1 }]}>
                   {sendingOtp ? t.resending : t.resend}
                 </Text>
               </Pressable>
             </View>
 
             <Pressable onPress={() => { setOnboardingStep("register"); setOtpCode(""); setOtpError(null); }}>
-              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                 {t.changePhone}
               </Text>
             </Pressable>
@@ -609,19 +609,19 @@ export default function HomeScreen() {
               <Ionicons name="lock-closed-outline" size={48} color={theme.tint} />
             </View>
 
-            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: fonts.bold }]}>
               {t.setPasswordTitle}
             </Text>
-            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
               {t.setPasswordSubtitle}
             </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.newPassword}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>{t.newPassword}</Text>
               <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: passwordError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
                 <Ionicons name="lock-closed-outline" size={18} color={passwordError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
-                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: fonts.medium }]}
                   placeholder={t.passwordPlaceholder}
                   placeholderTextColor={theme.textMuted}
                   secureTextEntry={!showNewPassword}
@@ -635,15 +635,15 @@ export default function HomeScreen() {
                   <Ionicons name={showNewPassword ? "eye-off-outline" : "eye-outline"} size={18} color={theme.textMuted} />
                 </Pressable>
               </View>
-              {passwordError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>{passwordError}</Text>}
+              {passwordError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: fonts.regular }]}>{passwordError}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.confirmPassword}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>{t.confirmPassword}</Text>
               <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: confirmPasswordError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
                 <Ionicons name="lock-closed-outline" size={18} color={confirmPasswordError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
-                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: fonts.medium }]}
                   placeholder={t.confirmPasswordPlaceholder}
                   placeholderTextColor={theme.textMuted}
                   secureTextEntry={!showConfirmPassword}
@@ -658,7 +658,7 @@ export default function HomeScreen() {
                   <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={18} color={theme.textMuted} />
                 </Pressable>
               </View>
-              {confirmPasswordError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>{confirmPasswordError}</Text>}
+              {confirmPasswordError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: fonts.regular }]}>{confirmPasswordError}</Text>}
             </View>
 
             <Pressable
@@ -667,12 +667,12 @@ export default function HomeScreen() {
               disabled={savingPassword}
             >
               {savingPassword ? <ActivityIndicator size="small" color="#000" /> : (
-                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.createAccount}</Text><Ionicons name="checkmark" size={18} color="#000" /></>
+                <><Text style={[styles.continueBtnText, { fontFamily: fonts.semiBold }]}>{t.createAccount}</Text><Ionicons name="checkmark" size={18} color="#000" /></>
               )}
             </Pressable>
 
             <Pressable onPress={() => { setOnboardingStep("verify"); setNewPassword(""); setConfirmPassword(""); }}>
-              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                 {t.backToVerification}
               </Text>
             </Pressable>
@@ -693,20 +693,20 @@ export default function HomeScreen() {
               <Ionicons name="person-circle-outline" size={48} color={theme.tint} />
             </View>
 
-            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: fonts.bold }]}>
               {t.loginTitle}
             </Text>
-            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
               {t.loginWith}
             </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.phoneNumber}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>{t.phoneNumber}</Text>
               <View style={styles.inputRow}>
                 <CountryPicker selected={selectedCountry} onSelect={setSelectedCountry} />
                 <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.border, flex: 1 }]}>
                   <TextInput
-                    style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                    style={[styles.phoneInput, { color: theme.text, fontFamily: fonts.medium }]}
                     placeholder={t.phonePlaceholder}
                     placeholderTextColor={theme.textMuted}
                     keyboardType="phone-pad"
@@ -720,11 +720,11 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.password}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>{t.password}</Text>
               <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: loginError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
                 <Ionicons name="lock-closed-outline" size={18} color={loginError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
-                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: fonts.medium }]}
                   placeholder={t.password}
                   placeholderTextColor={theme.textMuted}
                   secureTextEntry={!showLoginPassword}
@@ -739,7 +739,7 @@ export default function HomeScreen() {
                   <Ionicons name={showLoginPassword ? "eye-off-outline" : "eye-outline"} size={18} color={theme.textMuted} />
                 </Pressable>
               </View>
-              {loginError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>{loginError}</Text>}
+              {loginError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: fonts.regular }]}>{loginError}</Text>}
             </View>
 
             <Pressable
@@ -748,14 +748,14 @@ export default function HomeScreen() {
               disabled={loggingIn}
             >
               {loggingIn ? <ActivityIndicator size="small" color="#000" /> : (
-                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.login}</Text><Ionicons name="arrow-forward" size={18} color="#000" /></>
+                <><Text style={[styles.continueBtnText, { fontFamily: fonts.semiBold }]}>{t.login}</Text><Ionicons name="arrow-forward" size={18} color="#000" /></>
               )}
             </Pressable>
 
             <View style={styles.resendRow}>
-              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>{t.noAccount}</Text>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: fonts.regular }]}>{t.noAccount}</Text>
               <Pressable onPress={() => { setOnboardingStep("register"); setLoginPhone(""); setLoginPassword(""); setLoginError(null); }}>
-                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>{t.createOne}</Text>
+                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: fonts.semiBold }]}>{t.createOne}</Text>
               </Pressable>
             </View>
           </Animated.View>
@@ -774,21 +774,21 @@ export default function HomeScreen() {
             <Ionicons name="search" size={48} color={theme.tint} />
           </View>
 
-          <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+          <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: fonts.bold }]}>
             {t.appName}
           </Text>
-          <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             {t.registerTagline}
           </Text>
 
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>
               {t.fullName}
             </Text>
             <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: nameError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
               <Ionicons name="person-outline" size={18} color={nameError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
               <TextInput
-                style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                style={[styles.phoneInput, { color: theme.text, fontFamily: fonts.medium }]}
                 placeholder={t.fullNamePlaceholder}
                 placeholderTextColor={theme.textMuted}
                 autoCapitalize="words"
@@ -800,14 +800,14 @@ export default function HomeScreen() {
               />
             </View>
             {nameError && (
-              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: fonts.regular }]}>
                 {nameError}
               </Text>
             )}
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>
               {t.phoneNumber}
             </Text>
             <View style={[styles.inputRow]}>
@@ -815,7 +815,7 @@ export default function HomeScreen() {
               <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: phoneError ? theme.destructive : theme.border, flex: 1 }]}>
                 <TextInput
                   ref={inputRef}
-                  style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: fonts.medium }]}
                   placeholder={t.phonePlaceholder}
                   placeholderTextColor={theme.textMuted}
                   keyboardType="phone-pad"
@@ -828,7 +828,7 @@ export default function HomeScreen() {
               </View>
             </View>
             {phoneError && (
-              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: fonts.regular }]}>
                 {phoneError}
               </Text>
             )}
@@ -846,20 +846,20 @@ export default function HomeScreen() {
               <ActivityIndicator size="small" color="#000" />
             ) : (
               <>
-                <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.sendCode}</Text>
+                <Text style={[styles.continueBtnText, { fontFamily: fonts.semiBold }]}>{t.sendCode}</Text>
                 <Ionicons name="arrow-forward" size={18} color="#000" />
               </>
             )}
           </Pressable>
 
-          <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: fonts.regular }]}>
             {t.privacyNote}
           </Text>
 
           <View style={styles.resendRow}>
-            <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>{t.alreadyHaveAccount}</Text>
+            <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: fonts.regular }]}>{t.alreadyHaveAccount}</Text>
             <Pressable onPress={() => { setOnboardingStep("login"); setLoginPhone(""); setLoginPassword(""); setLoginError(null); }}>
-              <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>{t.login}</Text>
+              <Text style={[styles.resendLink, { color: theme.tint, fontFamily: fonts.semiBold }]}>{t.login}</Text>
             </Pressable>
           </View>
         </Animated.View>
@@ -879,10 +879,10 @@ export default function HomeScreen() {
           entering={FadeInDown.duration(400)}
         >
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.bold }]}>
               {t.appName}
             </Text>
-            <Text style={[styles.headerSub, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.headerSub, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
               {t.appTagline}
             </Text>
           </View>
@@ -892,7 +892,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/store")}
             >
               <Ionicons name="diamond" size={14} color="#FFD700" />
-              <Text style={[styles.coinText, { color: "#FFD700", fontFamily: "Inter_700Bold" }]}>
+              <Text style={[styles.coinText, { color: "#FFD700", fontFamily: fonts.bold }]}>
                 {coins}
               </Text>
             </Pressable>
@@ -904,7 +904,7 @@ export default function HomeScreen() {
             <CountryPicker selected={searchCountry} onSelect={setSearchCountry} />
             <View style={[styles.searchCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <TextInput
-                style={[styles.searchInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
+                style={[styles.searchInput, { color: theme.text, fontFamily: fonts.medium }]}
                 placeholder={t.searchPlaceholder}
                 placeholderTextColor={theme.textMuted}
                 keyboardType="phone-pad"
@@ -936,7 +936,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.searchQuotaRow}>
             <Ionicons name="search-outline" size={12} color={freeSearchesRemaining > 0 ? theme.tint : "#FFD700"} />
-            <Text style={[styles.searchQuotaText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.searchQuotaText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
               {freeSearchesRemaining > 0
                 ? t.freeSearches(freeSearchesRemaining)
                 : t.useCoin}
@@ -950,10 +950,10 @@ export default function HomeScreen() {
               <View style={[styles.syncGateIconWrap, { backgroundColor: theme.tint + "15" }]}>
                 <Ionicons name="lock-closed" size={24} color={theme.tint} />
               </View>
-              <Text style={[styles.syncGateTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
+              <Text style={[styles.syncGateTitle, { color: theme.text, fontFamily: fonts.semiBold }]}>
                 {t.uploadContactsTitle}
               </Text>
-              <Text style={[styles.syncGateBody, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.syncGateBody, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
                 {t.uploadContactsBody}
               </Text>
               <Pressable
@@ -968,7 +968,7 @@ export default function HomeScreen() {
                 ) : (
                   <>
                     <Ionicons name="cloud-upload-outline" size={18} color="#000" />
-                    <Text style={[styles.syncGateBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                    <Text style={[styles.syncGateBtnText, { fontFamily: fonts.semiBold }]}>
                       {t.syncGateBtn}
                     </Text>
                   </>
@@ -981,11 +981,11 @@ export default function HomeScreen() {
         {history.length > 0 && (
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>
                 {t.recent}
               </Text>
               <Pressable onPress={clearHistory} hitSlop={12}>
-                <Text style={[styles.clearText, { color: theme.tint, fontFamily: "Inter_500Medium" }]}>
+                <Text style={[styles.clearText, { color: theme.tint, fontFamily: fonts.medium }]}>
                   {t.clear}
                 </Text>
               </Pressable>
@@ -1010,10 +1010,10 @@ export default function HomeScreen() {
                   >
                     <Text style={styles.historyFlag}>{c.flag}</Text>
                     <View style={styles.historyInfo}>
-                      <Text style={[styles.historyNumber, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
+                      <Text style={[styles.historyNumber, { color: theme.text, fontFamily: fonts.medium }]}>
                         {c.dial} {item.phone.replace(c.dial.replace("+", ""), "")}
                       </Text>
-                      <Text style={[styles.historyCountry, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                      <Text style={[styles.historyCountry, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
                         {c.name}
                       </Text>
                     </View>
@@ -1031,7 +1031,7 @@ export default function HomeScreen() {
             entering={FadeInDown.delay(200).duration(400)}
           >
             <Ionicons name="search-outline" size={48} color={theme.textMuted} />
-            <Text style={[styles.emptyText, { color: theme.textMuted, fontFamily: "Inter_500Medium" }]}>
+            <Text style={[styles.emptyText, { color: theme.textMuted, fontFamily: fonts.medium }]}>
               {t.enterNumberHint}
             </Text>
           </Animated.View>

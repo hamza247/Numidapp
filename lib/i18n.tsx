@@ -541,11 +541,33 @@ export const translations = {
 export type TranslationKey = keyof typeof translations.en;
 export type Translations = typeof translations.en;
 
+export interface FontSet {
+  regular: string;
+  medium: string;
+  semiBold: string;
+  bold: string;
+}
+
+const interFonts: FontSet = {
+  regular: "Inter_400Regular",
+  medium: "Inter_500Medium",
+  semiBold: "Inter_600SemiBold",
+  bold: "Inter_700Bold",
+};
+
+const arabicFonts: FontSet = {
+  regular: "JannaLTBold",
+  medium: "JannaLTBold",
+  semiBold: "JannaLTBold",
+  bold: "JannaLTBold",
+};
+
 interface LanguageContextType {
   language: Language;
   t: Translations;
   setLanguage: (lang: Language) => void;
   isRTL: boolean;
+  fonts: FontSet;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -553,6 +575,7 @@ const LanguageContext = createContext<LanguageContextType>({
   t: translations.en,
   setLanguage: () => {},
   isRTL: false,
+  fonts: interFonts,
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -584,9 +607,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const isRTL = language === "ar";
   const t = translations[language] as Translations;
+  const fonts = language === "ar" ? arabicFonts : interFonts;
 
   return (
-    <LanguageContext.Provider value={{ language, t, setLanguage, isRTL }}>
+    <LanguageContext.Provider value={{ language, t, setLanguage, isRTL, fonts }}>
       {children}
     </LanguageContext.Provider>
   );

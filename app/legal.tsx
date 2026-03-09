@@ -21,11 +21,12 @@ type LegalType = "privacy" | "terms" | "about";
 function Section({ title, section, isRTL }: { title: string; section: LegalSection; isRTL: boolean }) {
   const colorScheme = useColorScheme();
   const theme = colorScheme !== "light" ? Colors.dark : Colors.light;
+  const { fonts } = useLanguage();
   return (
     <View style={sectionStyles.container}>
       <Text style={[
         sectionStyles.title,
-        { color: theme.tint, fontFamily: "Inter_700Bold", textAlign: isRTL ? "right" : "left" },
+        { color: theme.tint, fontFamily: fonts.bold, textAlign: isRTL ? "right" : "left" },
       ]}>
         {title}
       </Text>
@@ -34,7 +35,7 @@ function Section({ title, section, isRTL }: { title: string; section: LegalSecti
           key={i}
           style={[
             sectionStyles.para,
-            { color: theme.textSecondary, fontFamily: "Inter_400Regular", textAlign: isRTL ? "right" : "left" },
+            { color: theme.textSecondary, fontFamily: fonts.regular, textAlign: isRTL ? "right" : "left" },
             i > 0 && { marginTop: 8 },
           ]}
         >
@@ -48,7 +49,7 @@ function Section({ title, section, isRTL }: { title: string; section: LegalSecti
           </Text>
           <Text style={[
             sectionStyles.bulletText,
-            { color: theme.textSecondary, fontFamily: "Inter_400Regular", textAlign: isRTL ? "right" : "left" },
+            { color: theme.textSecondary, fontFamily: fonts.regular, textAlign: isRTL ? "right" : "left" },
           ]}>
             {bullet}
           </Text>
@@ -75,7 +76,7 @@ export default function LegalScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { type } = useLocalSearchParams<{ type: LegalType }>();
-  const { t, language } = useLanguage();
+  const { t, language, fonts } = useLanguage();
 
   const isRTL = language === "ar";
   const legalType: LegalType = (type === "privacy" || type === "terms" || type === "about") ? type : "about";
@@ -109,7 +110,7 @@ export default function LegalScreen() {
             color={theme.text}
           />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
+        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.semiBold }]}>
           {title}
         </Text>
         <View style={{ width: 40 }} />
