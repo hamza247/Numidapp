@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
+import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified, getCoins, updateCoins, setCoinsExact } from "./storage";
 import { z } from "zod";
 
 async function sendSmsOtp(to: string, code: string): Promise<boolean> {
@@ -274,6 +274,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       uploaderName: r.uploaderName,
     }));
     return res.json({ results: mapped, count: mapped.length });
+  });
+
+  app.get("/api/coins", async (req: Request, res: Response) => {
+    const phone = req.query.phone as string;
+    if (!phone || phone.length < 7) return res.status(400).json({ error: "Invalid phone" });
+    try {
+      const coins = await getCoins(phone);
+      return res.json({ coins });
+    } catch (err) {
+      console.error("Get coins error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/coins/update", async (req: Request, res: Response) => {
+    const { phone, delta } = req.body;
+    if (!phone || typeof delta !== "number") return res.status(400).json({ error: "Invalid request" });
+    try {
+      const coins = await updateCoins(phone, delta);
+      return res.json({ coins });
+    } catch (err) {
+      console.error("Update coins error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/coins/set", async (req: Request, res: Response) => {
+    const { phone, amount } = req.body;
+    if (!phone || typeof amount !== "number") return res.status(400).json({ error: "Invalid request" });
+    try {
+      const coins = await setCoinsExact(phone, amount);
+      return res.json({ coins });
+    } catch (err) {
+      console.error("Set coins error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
   });
 
   const httpServer = createServer(app);

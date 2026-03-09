@@ -52,6 +52,7 @@ export const profiles = pgTable("profiles", {
   phone: varchar("phone", { length: 20 }).notNull().unique(),
   countryCode: varchar("country_code", { length: 5 }).notNull(),
   passwordHash: text("password_hash"),
+  coins: integer("coins").notNull().default(5),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

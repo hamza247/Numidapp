@@ -34,7 +34,7 @@ export default function ProfileScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
-  const { coins, addCoins } = useCoins();
+  const { coins, addCoins, refreshCoins } = useCoins();
 
   const [userName, setUserName] = useState<string | null>(null);
   const [userPhone, setUserPhone] = useState<string | null>(null);
@@ -134,6 +134,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           await AsyncStorage.multiRemove([PHONE_KEY, NAME_KEY, COUNTRY_KEY]);
+          await refreshCoins(null);
           router.replace("/");
         },
       },

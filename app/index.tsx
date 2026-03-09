@@ -40,7 +40,7 @@ export default function HomeScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
-  const { coins, freeSearchesRemaining, spendSearch, loaded: coinsLoaded } = useCoins();
+  const { coins, freeSearchesRemaining, spendSearch, loaded: coinsLoaded, refreshCoins } = useCoins();
 
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -264,6 +264,7 @@ export default function HomeScreen() {
       await AsyncStorage.setItem(COUNTRY_KEY, selectedCountry.code);
       setUserPhone(pendingPhone);
       setUserName(finalName);
+      await refreshCoins(pendingPhone);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch { Alert.alert("Error", "Could not connect to the server. Please try again."); }
     finally { setSavingPassword(false); }
@@ -298,6 +299,7 @@ export default function HomeScreen() {
       await AsyncStorage.setItem(COUNTRY_KEY, profile?.countryCode || selectedCountry.code);
       setUserPhone(fullNumber);
       setUserName(profile?.fullName || "");
+      await refreshCoins(fullNumber);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch { Alert.alert("Error", "Could not connect to the server. Please try again."); }
     finally { setLoggingIn(false); }

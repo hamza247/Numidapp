@@ -186,6 +186,29 @@ export async function getProfileByPhone(phone: string): Promise<Profile | null> 
   return profile ?? null;
 }
 
+export async function getCoins(phone: string): Promise<number> {
+  const [row] = await db.select({ coins: profiles.coins }).from(profiles).where(eq(profiles.phone, phone));
+  return row?.coins ?? 5;
+}
+
+export async function updateCoins(phone: string, delta: number): Promise<number> {
+  const [row] = await db
+    .update(profiles)
+    .set({ coins: sql`GREATEST(0, coins + ${delta})` })
+    .where(eq(profiles.phone, phone))
+    .returning({ coins: profiles.coins });
+  return row?.coins ?? 0;
+}
+
+export async function setCoinsExact(phone: string, amount: number): Promise<number> {
+  const [row] = await db
+    .update(profiles)
+    .set({ coins: Math.max(0, amount) })
+    .where(eq(profiles.phone, phone))
+    .returning({ coins: profiles.coins });
+  return row?.coins ?? 0;
+}
+
 export async function setProfilePassword(phone: string, password: string): Promise<Profile> {
   const passwordHash = await bcrypt.hash(password, 10);
   const [profile] = await db
