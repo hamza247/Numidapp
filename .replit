@@ -85,10 +85,10 @@ ensurePreviewReachable = "/status"
 name = "Admin Panel"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd admin && php artisan serve --host=0.0.0.0 --port=8000"
-waitForPort = 8000
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd admin-panel && php -S 0.0.0.0:8000 index.php"
+waitForPort = 8000

@@ -235,10 +235,8 @@ function setupErrorHandler(app: express.Application) {
 
 (async () => {
   setupCors(app);
-  setupBodyParsing(app);
-  setupRequestLogging(app);
 
-  // Proxy /admin/* to the Laravel admin panel (dev only)
+  // Proxy /admin/* to the PHP admin panel (dev only) — must be before body parsing
   if (process.env.NODE_ENV !== "production") {
     app.use(
       createProxyMiddleware({
@@ -257,6 +255,9 @@ function setupErrorHandler(app: express.Application) {
       }),
     );
   }
+
+  setupBodyParsing(app);
+  setupRequestLogging(app);
 
   configureExpoAndLanding(app);
 
