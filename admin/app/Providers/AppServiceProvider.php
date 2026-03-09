@@ -20,7 +20,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (
+        if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+            $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
+            $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'https';
+            URL::forceScheme($proto);
+            URL::forceRootUrl("{$proto}://{$host}");
+        } elseif (
             isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &&
             $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https'
         ) {
