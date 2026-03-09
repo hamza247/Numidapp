@@ -87,7 +87,9 @@ function ResultCard({
   getRevealedPhone: (id: string) => string | null;
   cacheRevealedPhone: (id: string, value: string) => Promise<void>;
 }) {
-  const { t, fonts } = useLanguage();
+  const { t, fonts, isRTL } = useLanguage();
+  const rowDir = isRTL ? "row-reverse" : "row" as const;
+  const textAlign = isRTL ? "right" : "left" as const;
   const [revealing, setRevealing] = useState(false);
   const labelStyle = getLabelStyle(item.label, theme);
   const avatarColor = getAvatarColor(item.storedName, theme);
@@ -140,15 +142,15 @@ function ResultCard({
             </View>
           </View>
 
-          <View style={styles.uploaderRow}>
+          <View style={[styles.uploaderRow, { flexDirection: rowDir }]}>
             <Ionicons name="person-outline" size={13} color={theme.textSecondary} />
             {revealed ? (
-              <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
+              <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: fonts.regular, textAlign }]}>
                 {t.savedBy} {revealedName}
               </Text>
             ) : (
               <Pressable
-                style={({ pressed }) => [styles.revealBtn, { backgroundColor: "#C49A2A" + "18", borderColor: "#C49A2A" + "40", opacity: pressed ? 0.7 : 1 }]}
+                style={({ pressed }) => [styles.revealBtn, { flexDirection: rowDir, backgroundColor: "#C49A2A" + "18", borderColor: "#C49A2A" + "40", opacity: pressed ? 0.7 : 1 }]}
                 onPress={handleReveal}
                 disabled={revealing}
               >
@@ -160,7 +162,7 @@ function ResultCard({
                     <Text style={[styles.revealBtnText, { color: "#C49A2A", fontFamily: fonts.semiBold }]}>
                       {t.revealName}
                     </Text>
-                    <View style={styles.revealCost}>
+                    <View style={[styles.revealCost, isRTL ? { paddingLeft: 0, paddingRight: 2, borderLeftWidth: 0, borderRightWidth: 1, borderRightColor: "#C49A2A40" } : {}]}>
                       <Ionicons name="diamond" size={9} color="#C49A2A" />
                       <Text style={[styles.revealCostText, { color: "#C49A2A", fontFamily: fonts.bold }]}>1</Text>
                     </View>
