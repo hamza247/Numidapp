@@ -195,7 +195,7 @@ export const translations = {
 
   ar: {
     appName: "من حفظني",
-    appTagline: "اكتشف من يملك رقمك",
+    appTagline: "اكتشف من يحفظ رقمك",
 
     login: "تسجيل الدخول",
     loginTitle: "مرحباً بعودتك",
@@ -340,7 +340,7 @@ export const translations = {
     changePhone: "تغيير رقم الهاتف",
     backToVerification: "العودة إلى التحقق",
     loginWith: "سجّل الدخول برقم هاتفك وكلمة المرور",
-    registerTagline: "أنشئ ملفك الشخصي لاكتشاف من يملك رقمك.",
+    registerTagline: "أنشئ ملفك الشخصي لاكتشاف من يحفظ رقمك.",
     uploadContactsTitle: "ارفع جهات الاتصال لفتح البحث",
     uploadContactsBody: "شارك قائمة جهات اتصالك للمساعدة في بناء الشبكة. يمكنك بعد ذلك البحث عن أي رقم.",
     createOne: "إنشاء حساب",
