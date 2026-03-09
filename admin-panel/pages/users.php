@@ -61,7 +61,10 @@ ob_start();
                         </div>
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-400 font-mono">+<?= htmlspecialchars($u['phone']) ?></td>
-                    <td class="px-5 py-4 text-sm text-gray-400"><?= htmlspecialchars($u['country_code'] ?? '') ?></td>
+                    <?php $cinfo = getCountryFromPhone($u['phone']); ?>
+                    <td class="px-5 py-4 text-sm text-gray-400">
+                        <span title="<?= htmlspecialchars($cinfo['dialCode']) ?>"><?= $cinfo['flag'] ?> <?= htmlspecialchars($cinfo['country']) ?></span>
+                    </td>
                     <td class="px-5 py-4"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-yellow-400/10 text-yellow-400 text-xs font-semibold"><?= $u['coins'] ?></span></td>
                     <td class="px-5 py-4 text-sm text-gray-500"><?= date('M d, Y', strtotime($u['created_at'])) ?></td>
                     <td class="px-5 py-4 text-right"><a href="/admin/users/<?= urlencode($u['phone']) ?>" class="text-xs text-[#00C9D4] hover:underline">View</a></td>

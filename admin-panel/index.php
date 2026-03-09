@@ -30,6 +30,8 @@ function setSetting(PDO $db, string $key, string $value): void {
     $stmt->execute(['k' => $key, 'v' => $value, 'v2' => $value]);
 }
 
+require_once __DIR__ . '/includes/phone-country.php';
+
 $adminUser = getenv('ADMIN_USERNAME') ?: 'admin';
 $adminPass = getenv('ADMIN_PASSWORD') ?: 'admin123';
 

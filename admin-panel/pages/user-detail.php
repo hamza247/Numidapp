@@ -39,10 +39,12 @@ ob_start();
                 <span class="ml-auto px-2.5 py-1 rounded-lg bg-orange-400/10 text-orange-400 text-xs font-medium">Number Hidden</span>
             <?php endif; ?>
         </div>
+        <?php $cinfo = getCountryFromPhone($user['phone']); ?>
         <div class="grid grid-cols-3 gap-4">
             <div class="bg-[#080C14] rounded-xl p-4">
                 <div class="text-xs text-gray-500 mb-1">Country</div>
-                <div class="text-base font-semibold text-white"><?= htmlspecialchars($user['country_code'] ?? 'N/A') ?></div>
+                <div class="text-base font-semibold text-white"><?= $cinfo['flag'] ?> <?= htmlspecialchars($cinfo['country']) ?></div>
+                <div class="text-xs text-gray-600 mt-0.5"><?= htmlspecialchars($cinfo['dialCode']) ?></div>
             </div>
             <div class="bg-[#080C14] rounded-xl p-4">
                 <div class="text-xs text-gray-500 mb-1">Contacts Uploaded</div>
