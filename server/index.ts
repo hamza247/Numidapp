@@ -202,6 +202,12 @@ function configureExpoAndLanding(app: express.Application) {
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app.use(express.static(path.resolve(process.cwd(), "static-build")));
 
+  // Catch-all: redirect any unrecognised non-API path to the landing page
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith("/api")) return next();
+    return serveLandingPage({ req, res, landingPageTemplate, appName });
+  });
+
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 
