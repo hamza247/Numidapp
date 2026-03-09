@@ -21,6 +21,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { useCoins } from "@/lib/coins";
 import { getApiUrl } from "@/lib/query-client";
+import { fetch } from "expo/fetch";
 
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
@@ -61,8 +62,23 @@ export default function ProfileScreen() {
     setUserPhone(phone);
     if (avatar) setAvatarUri(avatar);
     if (phone) {
-      const removed = await AsyncStorage.getItem(removedKey(phone));
-      setNumberRemoved(removed === "true");
+      const localRemoved = await AsyncStorage.getItem(removedKey(phone));
+      if (localRemoved === "true") {
+        setNumberRemoved(true);
+      } else {
+        try {
+          const base = getApiUrl();
+          const url = new URL(`/api/contacts/number/status?phone=${encodeURIComponent(phone)}`, base);
+          const res = await fetch(url.toString());
+          if (res.ok) {
+            const data = await res.json();
+            if (data.removed) {
+              setNumberRemoved(true);
+              await AsyncStorage.setItem(removedKey(phone), "true");
+            }
+          }
+        } catch {}
+      }
     }
   }
 

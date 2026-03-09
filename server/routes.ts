@@ -201,6 +201,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/contacts/number/status", async (req: Request, res: Response) => {
+    const phone = req.query.phone as string;
+    if (!phone || phone.length < 7) return res.status(400).json({ error: "Invalid phone" });
+    try {
+      const normalized = phone.replace(/\D/g, "");
+      const result = await pool.query("SELECT 1 FROM removed_numbers WHERE phone = $1 LIMIT 1", [normalized]);
+      return res.json({ removed: result.rows.length > 0 });
+    } catch (err) {
+      return res.json({ removed: false });
+    }
+  });
+
   app.delete("/api/contacts/number", async (req: Request, res: Response) => {
     const phone = req.query.phone as string;
     if (!phone || phone.length < 7) {
