@@ -137,19 +137,22 @@ export async function isPhoneVerified(phone: string): Promise<boolean> {
   return !!row;
 }
 
-export async function createProfile(data: InsertProfile): Promise<Profile> {
-  const [profile] = await db.insert(profiles).values(data).returning();
+export async function createProfile(data: InsertProfile, initialCoins?: number): Promise<Profile> {
+  const extra = initialCoins !== undefined ? { coins: initialCoins } : {};
+  const [profile] = await db.insert(profiles).values({ ...data, ...extra } as any).returning();
   return profile;
 }
 
 export async function createProfileWithPassword(
   data: InsertProfile,
-  password: string
+  password: string,
+  initialCoins?: number
 ): Promise<Profile> {
   const passwordHash = await bcrypt.hash(password, 10);
+  const extra = initialCoins !== undefined ? { coins: initialCoins } : {};
   const [profile] = await db
     .insert(profiles)
-    .values({ ...data, passwordHash })
+    .values({ ...data, passwordHash, ...extra } as any)
     .returning();
   return profile;
 }

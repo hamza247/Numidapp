@@ -29,6 +29,18 @@ if ($action === 'reset_coins') {
     $_SESSION['flash_success'] = "All users reset to {$amount} coins.";
 }
 
+if ($action === 'save_app_config') {
+    $fields = ['free_daily_searches', 'search_cost', 'reveal_cost', 'initial_coins', 'remove_phone_cost'];
+    foreach ($fields as $f) {
+        if (isset($_POST[$f])) {
+            setSetting($db, $f, (string)(int)$_POST[$f]);
+        }
+    }
+    $_SESSION['flash_success'] = "App configuration saved successfully.";
+    header("Location: /admin/settings");
+    exit;
+}
+
 if ($action === 'clear_contacts') {
     $confirm = $_POST['confirm_clear'] ?? '';
     if ($confirm === 'CONFIRM') {

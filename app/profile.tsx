@@ -31,7 +31,6 @@ const COUNTRY_KEY = "user_country";
 const AVATAR_KEY = "user_avatar";
 const syncedKey = (phone: string) => `contacts_synced_${phone}`;
 const removedKey = (phone: string) => `number_removed_${phone}`;
-const REMOVE_PHONE_COST = 3;
 
 interface LangOption {
   code: Language;
@@ -51,7 +50,8 @@ export default function ProfileScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
-  const { coins, addCoins, refreshCoins } = useCoins();
+  const { coins, addCoins, refreshCoins, appConfig } = useCoins();
+  const REMOVE_PHONE_COST = appConfig.removePhoneCost;
   const { t, language, setLanguage, fonts, isRTL } = useLanguage();
 
   const [userName, setUserName] = useState<string | null>(null);

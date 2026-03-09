@@ -243,7 +243,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ profile: { fullName: profile.fullName, phone: profile.phone, countryCode: profile.countryCode } });
       }
 
-      const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password);
+      const icResult = await pool.query("SELECT value FROM app_settings WHERE key = 'initial_coins'");
+      const initialCoins = icResult.rows.length ? parseInt(icResult.rows[0].value, 10) || 5 : 5;
+      const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password, initialCoins);
       return res.json({ profile: { fullName: profile.fullName, phone: profile.phone, countryCode: profile.countryCode } });
     } catch (err) {
       console.error("Register error:", err);
@@ -320,7 +322,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { fullName, phone, countryCode } = parsed.data;
-      const profile = await createProfile({ fullName, phone, countryCode });
+      const icResult2 = await pool.query("SELECT value FROM app_settings WHERE key = 'initial_coins'");
+      const initialCoins2 = icResult2.rows.length ? parseInt(icResult2.rows[0].value, 10) || 5 : 5;
+      const profile = await createProfile({ fullName, phone, countryCode }, initialCoins2);
       return res.json({ profile });
     } catch (err: any) {
       if (err?.code === "23505") {
@@ -494,6 +498,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     return res.json({ ok: true });
+  });
+
+  app.get("/api/app-config", async (_req: Request, res: Response) => {
+    try {
+      const result = await pool.query(
+        "SELECT key, value FROM app_settings WHERE key IN ('free_daily_searches','search_cost','reveal_cost','initial_coins','remove_phone_cost')"
+      );
+      const s: Record<string, number> = {
+        freeDailySearches: 5,
+        searchCost: 1,
+        revealCost: 1,
+        initialCoins: 5,
+        removePhoneCost: 3,
+      };
+      for (const row of result.rows) {
+        const v = parseInt(row.value, 10);
+        if (!isNaN(v)) {
+          if (row.key === "free_daily_searches") s.freeDailySearches = v;
+          if (row.key === "search_cost") s.searchCost = v;
+          if (row.key === "reveal_cost") s.revealCost = v;
+          if (row.key === "initial_coins") s.initialCoins = v;
+          if (row.key === "remove_phone_cost") s.removePhoneCost = v;
+        }
+      }
+      return res.json(s);
+    } catch (err) {
+      return res.json({ freeDailySearches: 5, searchCost: 1, revealCost: 1, initialCoins: 5, removePhoneCost: 3 });
+    }
   });
 
   app.post("/api/stripe/create-checkout", async (req: Request, res: Response) => {

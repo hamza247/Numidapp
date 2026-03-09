@@ -6,10 +6,22 @@ import { fetch } from "expo/fetch";
 const PHONE_KEY = "user_phone";
 const REVEALED_KEY = "revealed_numbers";
 const SEARCH_TRACKING_KEY = "daily_search_tracking";
-const INITIAL_COINS = 5;
-const REVEAL_COST = 1;
-const SEARCH_COST = 1;
-const FREE_DAILY_SEARCHES = 5;
+
+interface AppConfig {
+  freeDailySearches: number;
+  searchCost: number;
+  revealCost: number;
+  initialCoins: number;
+  removePhoneCost: number;
+}
+
+const DEFAULT_CONFIG: AppConfig = {
+  freeDailySearches: 5,
+  searchCost: 1,
+  revealCost: 1,
+  initialCoins: 5,
+  removePhoneCost: 3,
+};
 
 interface CoinsContextValue {
   coins: number;
@@ -22,6 +34,7 @@ interface CoinsContextValue {
   spendSearch: () => Promise<{ allowed: boolean; usedFree: boolean }>;
   loaded: boolean;
   refreshCoins: (phone?: string | null) => Promise<void>;
+  appConfig: AppConfig;
 }
 
 const CoinsContext = createContext<CoinsContextValue | null>(null);
@@ -56,14 +69,35 @@ async function updateCoinsOnServer(phone: string, delta: number): Promise<number
   }
 }
 
+async function fetchAppConfig(): Promise<AppConfig> {
+  try {
+    const base = getApiUrl();
+    const url = new URL("/api/app-config", base);
+    const res = await fetch(url.toString());
+    if (!res.ok) return DEFAULT_CONFIG;
+    const data = await res.json();
+    return {
+      freeDailySearches: typeof data.freeDailySearches === "number" ? data.freeDailySearches : DEFAULT_CONFIG.freeDailySearches,
+      searchCost: typeof data.searchCost === "number" ? data.searchCost : DEFAULT_CONFIG.searchCost,
+      revealCost: typeof data.revealCost === "number" ? data.revealCost : DEFAULT_CONFIG.revealCost,
+      initialCoins: typeof data.initialCoins === "number" ? data.initialCoins : DEFAULT_CONFIG.initialCoins,
+      removePhoneCost: typeof data.removePhoneCost === "number" ? data.removePhoneCost : DEFAULT_CONFIG.removePhoneCost,
+    };
+  } catch {
+    return DEFAULT_CONFIG;
+  }
+}
+
 export function CoinsProvider({ children }: { children: ReactNode }) {
-  const [coins, setCoins] = useState(INITIAL_COINS);
+  const [coins, setCoins] = useState(DEFAULT_CONFIG.initialCoins);
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [revealedMap, setRevealedMap] = useState<Record<string, string>>({});
   const [dailySearches, setDailySearches] = useState(0);
   const [searchDate, setSearchDate] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const phoneRef = useRef<string | null>(null);
+  const configRef = useRef<AppConfig>(DEFAULT_CONFIG);
 
   function getTodayKey(): string {
     const d = new Date();
@@ -75,20 +109,24 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function initLoad() {
-    const [phone, storedRevealed, storedSearch] = await Promise.all([
+    const [phone, storedRevealed, storedSearch, config] = await Promise.all([
       AsyncStorage.getItem(PHONE_KEY),
       AsyncStorage.getItem(REVEALED_KEY),
       AsyncStorage.getItem(SEARCH_TRACKING_KEY),
+      fetchAppConfig(),
     ]);
+
+    configRef.current = config;
+    setAppConfig(config);
 
     phoneRef.current = phone;
     setUserPhone(phone);
 
     if (phone) {
       const serverCoins = await fetchCoinsFromServer(phone);
-      setCoins(serverCoins !== null ? serverCoins : INITIAL_COINS);
+      setCoins(serverCoins !== null ? serverCoins : config.initialCoins);
     } else {
-      setCoins(INITIAL_COINS);
+      setCoins(config.initialCoins);
     }
 
     if (storedRevealed) {
@@ -130,7 +168,7 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
       const serverCoins = await fetchCoinsFromServer(resolvedPhone);
       if (serverCoins !== null) setCoins(serverCoins);
     } else {
-      setCoins(INITIAL_COINS);
+      setCoins(configRef.current.initialCoins);
     }
   }, []);
 
@@ -147,11 +185,12 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const spendCoin = useCallback(async (uploaderId: string): Promise<boolean> => {
+    const revealCost = configRef.current.revealCost;
     const phone = phoneRef.current;
     if (phone) {
       const currentCoins = await fetchCoinsFromServer(phone);
-      if (currentCoins === null || currentCoins < REVEAL_COST) return false;
-      const newCoins = await updateCoinsOnServer(phone, -REVEAL_COST);
+      if (currentCoins === null || currentCoins < revealCost) return false;
+      const newCoins = await updateCoinsOnServer(phone, -revealCost);
       if (newCoins !== null) {
         setCoins(newCoins);
         return true;
@@ -160,9 +199,9 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
     }
     let success = false;
     setCoins((prev) => {
-      if (prev < REVEAL_COST) { success = false; return prev; }
+      if (prev < revealCost) { success = false; return prev; }
       success = true;
-      return prev - REVEAL_COST;
+      return prev - revealCost;
     });
     return success;
   }, []);
@@ -183,13 +222,14 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const freeSearchesRemaining = Math.max(0, FREE_DAILY_SEARCHES - dailySearches);
+  const freeSearchesRemaining = Math.max(0, appConfig.freeDailySearches - dailySearches);
 
   const spendSearch = useCallback(async (): Promise<{ allowed: boolean; usedFree: boolean }> => {
+    const { freeDailySearches, searchCost } = configRef.current;
     const today = getTodayKey();
     const currentCount = searchDate === today ? dailySearches : 0;
 
-    if (currentCount < FREE_DAILY_SEARCHES) {
+    if (currentCount < freeDailySearches) {
       const newCount = currentCount + 1;
       setDailySearches(newCount);
       setSearchDate(today);
@@ -200,8 +240,8 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
     const phone = phoneRef.current;
     if (phone) {
       const currentCoins = await fetchCoinsFromServer(phone);
-      if (currentCoins === null || currentCoins < SEARCH_COST) return { allowed: false, usedFree: false };
-      const newCoins = await updateCoinsOnServer(phone, -SEARCH_COST);
+      if (currentCoins === null || currentCoins < searchCost) return { allowed: false, usedFree: false };
+      const newCoins = await updateCoinsOnServer(phone, -searchCost);
       if (newCoins !== null) {
         setCoins(newCoins);
         const newCount = currentCount + 1;
@@ -215,9 +255,9 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
 
     let success = false;
     setCoins((prev) => {
-      if (prev < SEARCH_COST) { success = false; return prev; }
+      if (prev < searchCost) { success = false; return prev; }
       success = true;
-      return prev - SEARCH_COST;
+      return prev - searchCost;
     });
     if (success) {
       const newCount = currentCount + 1;
@@ -229,7 +269,7 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
   }, [dailySearches, searchDate]);
 
   return (
-    <CoinsContext.Provider value={{ coins, spendCoin, isRevealed, getRevealedPhone, cacheRevealedPhone, addCoins, freeSearchesRemaining, spendSearch, loaded, refreshCoins }}>
+    <CoinsContext.Provider value={{ coins, spendCoin, isRevealed, getRevealedPhone, cacheRevealedPhone, addCoins, freeSearchesRemaining, spendSearch, loaded, refreshCoins, appConfig }}>
       {children}
     </CoinsContext.Provider>
   );
@@ -240,5 +280,3 @@ export function useCoins() {
   if (!ctx) throw new Error("useCoins must be used within CoinsProvider");
   return ctx;
 }
-
-export { REVEAL_COST, SEARCH_COST, FREE_DAILY_SEARCHES };
