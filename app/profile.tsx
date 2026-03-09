@@ -159,7 +159,7 @@ export default function ProfileScreen() {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           await AsyncStorage.multiRemove([PHONE_KEY, NAME_KEY, COUNTRY_KEY]);
           await refreshCoins(null);
-          router.replace("/");
+          router.replace("/login");
         },
       },
     ]);
