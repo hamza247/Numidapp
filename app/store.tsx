@@ -145,7 +145,9 @@ export default function StoreScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, addCoins } = useCoins();
-  const { t, fonts } = useLanguage();
+  const { t, fonts, isRTL } = useLanguage();
+  const rowDir = isRTL ? "row-reverse" : "row" as const;
+  const textAlign = isRTL ? "right" : "left" as const;
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
@@ -246,21 +248,21 @@ export default function StoreScreen() {
 
         <Animated.View entering={FadeInDown.delay(500).duration(400)} style={styles.infoSection}>
           <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { flexDirection: rowDir }]}>
               <Ionicons name="shield-checkmark-outline" size={18} color={theme.tint} />
-              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
+              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular, textAlign }]}>
                 {t.securePayment}
               </Text>
             </View>
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { flexDirection: rowDir }]}>
               <Ionicons name="infinite-outline" size={18} color={theme.tint} />
-              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
+              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular, textAlign }]}>
                 {t.coinsNeverExpire}
               </Text>
             </View>
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { flexDirection: rowDir }]}>
               <Ionicons name="flash-outline" size={18} color={theme.tint} />
-              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
+              <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: fonts.regular, textAlign }]}>
                 {t.instantDelivery}
               </Text>
             </View>
