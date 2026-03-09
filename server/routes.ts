@@ -544,6 +544,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/stripe/webhook", (_req: Request, res: Response) => {
+    res.json({ ok: true, message: "Stripe webhook endpoint is active. Send POST requests from Stripe Dashboard." });
+  });
+
   app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
     try {
       const settings = await getStripeSettings();
