@@ -8,6 +8,7 @@ import {
   useColorScheme,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -69,15 +70,49 @@ function ResultCard({
   item,
   index: idx,
   theme,
+  revealKey,
+  coins,
+  spendCoin,
+  isRevealed,
+  getRevealedPhone,
+  cacheRevealedPhone,
 }: {
   item: SearchResult;
   index: number;
   theme: typeof Colors.dark;
+  revealKey: string;
+  coins: number;
+  spendCoin: (id: string) => Promise<boolean>;
+  isRevealed: (id: string) => boolean;
+  getRevealedPhone: (id: string) => string | null;
+  cacheRevealedPhone: (id: string, value: string) => Promise<void>;
 }) {
   const { t, fonts } = useLanguage();
+  const [revealing, setRevealing] = useState(false);
   const labelStyle = getLabelStyle(item.label, theme);
   const avatarColor = getAvatarColor(item.storedName, theme);
   const initials = getInitials(item.storedName);
+  const revealed = isRevealed(revealKey);
+  const revealedName = getRevealedPhone(revealKey);
+
+  async function handleReveal() {
+    if (coins < 1) {
+      Alert.alert(t.notEnoughCoins, t.notEnoughCoinsReveal, [
+        { text: "OK", style: "cancel" },
+      ]);
+      return;
+    }
+    setRevealing(true);
+    const success = await spendCoin(revealKey);
+    if (success) {
+      await cacheRevealedPhone(revealKey, item.uploaderName);
+    } else {
+      Alert.alert(t.notEnoughCoins, t.notEnoughCoinsReveal, [
+        { text: "OK", style: "cancel" },
+      ]);
+    }
+    setRevealing(false);
+  }
 
   return (
     <Animated.View entering={FadeInDown.delay(idx * 50).duration(350).springify()}>
@@ -107,9 +142,32 @@ function ResultCard({
 
           <View style={styles.uploaderRow}>
             <Ionicons name="person-outline" size={13} color={theme.textSecondary} />
-            <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
-              {t.savedBy} {item.uploaderName}
-            </Text>
+            {revealed ? (
+              <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
+                {t.savedBy} {revealedName}
+              </Text>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.revealBtn, { backgroundColor: "#C49A2A" + "18", borderColor: "#C49A2A" + "40", opacity: pressed ? 0.7 : 1 }]}
+                onPress={handleReveal}
+                disabled={revealing}
+              >
+                {revealing ? (
+                  <ActivityIndicator size="small" color="#C49A2A" />
+                ) : (
+                  <>
+                    <Ionicons name="eye-outline" size={12} color="#C49A2A" />
+                    <Text style={[styles.revealBtnText, { color: "#C49A2A", fontFamily: fonts.semiBold }]}>
+                      {t.revealName}
+                    </Text>
+                    <View style={styles.revealCost}>
+                      <Ionicons name="diamond" size={9} color="#C49A2A" />
+                      <Text style={[styles.revealCostText, { color: "#C49A2A", fontFamily: fonts.bold }]}>1</Text>
+                    </View>
+                  </>
+                )}
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
@@ -127,7 +185,7 @@ export default function ResultsScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
-  const { coins } = useCoins();
+  const { coins, spendCoin, isRevealed, getRevealedPhone, cacheRevealedPhone } = useCoins();
   const { t, fonts } = useLanguage();
 
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -266,6 +324,12 @@ export default function ResultsScreen() {
               item={item}
               index={index}
               theme={theme}
+              revealKey={`${phone}-${index}`}
+              coins={coins}
+              spendCoin={spendCoin}
+              isRevealed={isRevealed}
+              getRevealedPhone={getRevealedPhone}
+              cacheRevealedPhone={cacheRevealedPhone}
             />
           )}
           ListHeaderComponent={
@@ -524,5 +588,31 @@ const styles = StyleSheet.create({
   },
   uploaderName: {
     fontSize: 13,
+  },
+  revealBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 28,
+    minHeight: 22,
+    justifyContent: "center",
+  },
+  revealBtnText: {
+    fontSize: 12,
+  },
+  revealCost: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingLeft: 2,
+    borderLeftWidth: 1,
+    borderLeftColor: "#C49A2A40",
+  },
+  revealCostText: {
+    fontSize: 11,
   },
 });

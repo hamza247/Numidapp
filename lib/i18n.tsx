@@ -104,6 +104,8 @@ export const translations = {
     personSaved: (n: number) => n === 1 ? "person saved this number" : "people saved this number",
     savedAs: (count: number, label: string) => `${count} as ${label}`,
     savedBy: "Saved by",
+    revealName: "Reveal",
+    notEnoughCoinsReveal: "You need at least 1 coin to reveal this name.",
     contactsDetails: "CONTACTS DETAILS",
 
     // Store
@@ -281,6 +283,8 @@ export const translations = {
     personSaved: (n: number) => n === 1 ? "شخص حفظ هذا الرقم" : "أشخاص حفظوا هذا الرقم",
     savedAs: (count: number, label: string) => `${count} بـ${label}`,
     savedBy: "حفظه",
+    revealName: "كشف",
+    notEnoughCoinsReveal: "تحتاج عملة واحدة على الأقل للكشف عن هذا الاسم.",
     contactsDetails: "تفاصيل جهات الاتصال",
 
     coinStore: "متجر العملات",
@@ -453,6 +457,8 @@ export const translations = {
     personSaved: (n: number) => n === 1 ? "personne a enregistré ce numéro" : "personnes ont enregistré ce numéro",
     savedAs: (count: number, label: string) => `${count} en ${label}`,
     savedBy: "Enregistré par",
+    revealName: "Révéler",
+    notEnoughCoinsReveal: "Vous avez besoin d'au moins 1 pièce pour révéler ce nom.",
     contactsDetails: "DÉTAILS DES CONTACTS",
 
     coinStore: "Boutique de pièces",
