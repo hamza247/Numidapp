@@ -240,7 +240,24 @@ export default function HomeScreen() {
         credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { Alert.alert("Error", data?.error || "Failed to create account"); return; }
+      if (!res.ok) {
+        if (res.status === 409) {
+          Alert.alert(
+            "Account Already Exists",
+            "An account with this number already has a password set. Please log in instead.",
+            [
+              { text: "Log In", onPress: () => {
+                setLoginPhone(onboardingPhone);
+                setOnboardingStep("login");
+              }},
+              { text: "Cancel", style: "cancel" },
+            ]
+          );
+        } else {
+          Alert.alert("Error", data?.error || "Failed to create account");
+        }
+        return;
+      }
       const finalName = data?.profile?.fullName || onboardingName.trim();
       await AsyncStorage.setItem(PHONE_KEY, pendingPhone);
       await AsyncStorage.setItem(NAME_KEY, finalName);

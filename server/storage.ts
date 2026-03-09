@@ -166,6 +166,16 @@ export async function getProfileByPhone(phone: string): Promise<Profile | null> 
   return profile ?? null;
 }
 
+export async function setProfilePassword(phone: string, password: string): Promise<Profile> {
+  const passwordHash = await bcrypt.hash(password, 10);
+  const [profile] = await db
+    .update(profiles)
+    .set({ passwordHash })
+    .where(eq(profiles.phone, phone))
+    .returning();
+  return profile;
+}
+
 export async function deleteProfile(phone: string): Promise<void> {
   await db.delete(contacts).where(eq(contacts.uploaderPhone, phone));
   await db.delete(profiles).where(eq(profiles.phone, phone));

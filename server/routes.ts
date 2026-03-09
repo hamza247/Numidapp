@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
+import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified } from "./storage";
 import { z } from "zod";
 
 async function sendSmsOtp(to: string, code: string): Promise<boolean> {
@@ -139,7 +139,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const existing = await getProfileByPhone(phone);
       if (existing) {
-        return res.status(409).json({ error: "An account with this phone number already exists." });
+        if (existing.passwordHash) {
+          return res.status(409).json({ error: "An account with this phone number already exists. Please log in instead." });
+        }
+        const profile = await setProfilePassword(phone, password);
+        return res.json({ profile: { fullName: profile.fullName, phone: profile.phone, countryCode: profile.countryCode } });
       }
 
       const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password);
