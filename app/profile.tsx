@@ -62,22 +62,23 @@ export default function ProfileScreen() {
     setUserPhone(phone);
     if (avatar) setAvatarUri(avatar);
     if (phone) {
-      const localRemoved = await AsyncStorage.getItem(removedKey(phone));
-      if (localRemoved === "true") {
-        setNumberRemoved(true);
-      } else {
-        try {
-          const base = getApiUrl();
-          const url = new URL(`/api/contacts/number/status?phone=${encodeURIComponent(phone)}`, base);
-          const res = await fetch(url.toString());
-          if (res.ok) {
-            const data = await res.json();
-            if (data.removed) {
-              setNumberRemoved(true);
-              await AsyncStorage.setItem(removedKey(phone), "true");
-            }
+      try {
+        const base = getApiUrl();
+        const url = new URL(`/api/contacts/number/status?phone=${encodeURIComponent(phone)}`, base);
+        const res = await fetch(url.toString());
+        if (res.ok) {
+          const data = await res.json();
+          if (data.removed) {
+            setNumberRemoved(true);
+            await AsyncStorage.setItem(removedKey(phone), "true");
+          } else {
+            setNumberRemoved(false);
+            await AsyncStorage.removeItem(removedKey(phone));
           }
-        } catch {}
+        }
+      } catch {
+        const localRemoved = await AsyncStorage.getItem(removedKey(phone));
+        setNumberRemoved(localRemoved === "true");
       }
     }
   }
