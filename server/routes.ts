@@ -1,8 +1,91 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import nodemailer from "nodemailer";
+import Stripe from "stripe";
 import { pool, upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified, getCoins, updateCoins, setCoinsExact } from "./storage";
 import { z } from "zod";
+
+async function getStripeSettings(): Promise<Record<string, string>> {
+  const result = await pool.query(
+    "SELECT key, value FROM app_settings WHERE key IN ('stripe_enabled','stripe_mode','stripe_sk_test','stripe_sk_live','stripe_currency','stripe_webhook_secret')"
+  );
+  const s: Record<string, string> = {};
+  for (const row of result.rows) s[row.key] = row.value;
+  return s;
+}
+
+function buildStripeClient(settings: Record<string, string>): Stripe | null {
+  if (settings.stripe_enabled !== "1") return null;
+  const key = settings.stripe_mode === "live" ? settings.stripe_sk_live : settings.stripe_sk_test;
+  if (!key) return null;
+  return new Stripe(key, { apiVersion: "2024-12-18.acacia" as any });
+}
+
+const PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Payment Successful</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#080C14;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+    .card{background:#0F1623;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:40px 32px;max-width:380px;width:100%;text-align:center}
+    .icon{width:72px;height:72px;background:rgba(0,201,212,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .icon svg{width:36px;height:36px}
+    h1{font-size:22px;font-weight:700;margin-bottom:10px}
+    p{font-size:14px;color:#8892a4;line-height:1.6;margin-bottom:24px}
+    .badge{display:inline-block;background:rgba(196,154,42,0.15);border:1px solid rgba(196,154,42,0.3);color:#C49A2A;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;margin-bottom:24px}
+    .close-btn{background:#00C9D4;color:#000;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%}
+    .close-btn:hover{background:#00b5bf}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#00C9D4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </div>
+    <h1>Payment Successful!</h1>
+    <p>Your coins have been added to your account. You can close this page and return to the app.</p>
+    <div class="badge">💎 Coins credited</div>
+    <button class="close-btn" onclick="window.close()">Return to App</button>
+  </div>
+</body>
+</html>`;
+
+const PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Payment Cancelled</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#080C14;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+    .card{background:#0F1623;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:40px 32px;max-width:380px;width:100%;text-align:center}
+    .icon{width:72px;height:72px;background:rgba(239,68,68,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .icon svg{width:36px;height:36px}
+    h1{font-size:22px;font-weight:700;margin-bottom:10px}
+    p{font-size:14px;color:#8892a4;line-height:1.6;margin-bottom:24px}
+    .close-btn{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%}
+    .close-btn:hover{background:rgba(255,255,255,0.12)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </div>
+    <h1>Payment Cancelled</h1>
+    <p>No charges were made. You can close this page and try again whenever you're ready.</p>
+    <button class="close-btn" onclick="window.close()">Close</button>
+  </div>
+</body>
+</html>`;
 
 async function sendSmsOtp(to: string, code: string): Promise<boolean> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -411,6 +494,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     return res.json({ ok: true });
+  });
+
+  app.post("/api/stripe/create-checkout", async (req: Request, res: Response) => {
+    const { phone, coins, priceInCents, packageId } = req.body;
+    if (!phone || !coins || !priceInCents || !packageId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      const settings = await getStripeSettings();
+      const stripe = buildStripeClient(settings);
+      if (!stripe) {
+        return res.status(503).json({ error: "Payments are not configured. Please contact support." });
+      }
+
+      const proto = req.header("x-forwarded-proto") || req.protocol || "https";
+      const host = req.header("x-forwarded-host") || req.get("host");
+      const baseUrl = `${proto}://${host}`;
+      const currency = settings.stripe_currency || "usd";
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: {
+            currency,
+            product_data: {
+              name: `${coins} Coins — Who Saved Me`,
+              description: `Add ${coins} coins to your account`,
+            },
+            unit_amount: Math.round(Number(priceInCents)),
+          },
+          quantity: 1,
+        }],
+        mode: "payment",
+        success_url: `${baseUrl}/api/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/api/payment/cancel`,
+        metadata: {
+          phone: String(phone),
+          coins: String(coins),
+          packageId: String(packageId),
+        },
+      });
+
+      return res.json({ url: session.url, sessionId: session.id });
+    } catch (err: any) {
+      console.error("Stripe checkout error:", err);
+      return res.status(500).json({ error: err.message || "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
+    try {
+      const settings = await getStripeSettings();
+      const stripe = buildStripeClient(settings);
+      if (!stripe) return res.status(503).send("Stripe not configured");
+
+      const webhookSecret = settings.stripe_webhook_secret;
+      const rawBody = (req as any).rawBody as Buffer | string | undefined;
+      let event: Stripe.Event;
+
+      if (webhookSecret && rawBody) {
+        const sig = req.headers["stripe-signature"] as string;
+        try {
+          event = stripe.webhooks.constructEvent(rawBody as Buffer, sig, webhookSecret);
+        } catch (err: any) {
+          console.error("Webhook signature error:", err.message);
+          return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
+      } else {
+        event = req.body as Stripe.Event;
+      }
+
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const phone = session.metadata?.phone;
+        const coins = parseInt(session.metadata?.coins || "0", 10);
+        if (phone && coins > 0) {
+          try {
+            await updateCoins(phone, coins);
+            console.log(`[Stripe] +${coins} coins → ${phone}`);
+          } catch (err) {
+            console.error("[Stripe] Failed to credit coins:", err);
+          }
+        }
+      }
+
+      return res.json({ received: true });
+    } catch (err: any) {
+      console.error("Stripe webhook error:", err);
+      return res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
+
+  app.get("/api/payment/success", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(PAYMENT_SUCCESS_HTML);
+  });
+
+  app.get("/api/payment/cancel", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(PAYMENT_CANCEL_HTML);
   });
 
   const httpServer = createServer(app);

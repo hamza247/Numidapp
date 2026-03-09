@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,13 +11,17 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import * as WebBrowser from "expo-web-browser";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Colors from "@/constants/colors";
 import { useCoins } from "@/lib/coins";
 import { useLanguage } from "@/lib/i18n";
+import { getApiUrl } from "@/lib/query-client";
+import { fetch } from "expo/fetch";
 
 interface CoinPackage {
   id: string;
@@ -144,7 +148,7 @@ export default function StoreScreen() {
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
-  const { coins, addCoins } = useCoins();
+  const { coins, refreshCoins } = useCoins();
   const { t, fonts, isRTL } = useLanguage();
   const rowDir = isRTL ? "row-reverse" : "row" as const;
   const textAlign = isRTL ? "right" : "left" as const;
@@ -153,21 +157,65 @@ export default function StoreScreen() {
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
 
+  useFocusEffect(
+    useCallback(() => {
+      refreshCoins();
+    }, [refreshCoins])
+  );
+
   async function handlePurchase(pkg: CoinPackage) {
+    const phone = await AsyncStorage.getItem("user_phone");
+    if (!phone) {
+      Alert.alert("Login Required", t.loginRequiredForPurchase);
+      return;
+    }
+
     setPurchasingId(pkg.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    await new Promise((r) => setTimeout(r, 1200));
+    try {
+      const base = getApiUrl();
+      const url = new URL("/api/stripe/create-checkout", base);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone,
+          coins: pkg.coins,
+          priceInCents: Math.round(pkg.price * 100),
+          packageId: pkg.id,
+        }),
+        credentials: "include",
+      });
 
-    await addCoins(pkg.coins);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const data = await res.json().catch(() => ({})) as any;
 
-    Alert.alert(
-      t.purchaseComplete,
-      t.purchaseCompleteMsg(pkg.coins, coins + pkg.coins),
-      [{ text: "OK" }]
-    );
-    setPurchasingId(null);
+      if (!res.ok) {
+        const msg = data?.error || t.stripeUnavailable;
+        Alert.alert("Payment Error", msg);
+        return;
+      }
+
+      const checkoutUrl: string = data.url;
+      if (!checkoutUrl) {
+        Alert.alert("Error", t.stripeError);
+        return;
+      }
+
+      if (Platform.OS === "web") {
+        window.open(checkoutUrl, "_blank");
+      } else {
+        await WebBrowser.openBrowserAsync(checkoutUrl, {
+          dismissButtonStyle: "close",
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
+        });
+        await refreshCoins();
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err?.message || t.stripeError);
+    } finally {
+      setPurchasingId(null);
+    }
   }
 
   return (

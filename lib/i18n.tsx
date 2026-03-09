@@ -123,6 +123,9 @@ export const translations = {
     bestValue: "Best Value",
     save33: "Save 33%",
     save47: "Save 47%",
+    loginRequiredForPurchase: "Please log in before purchasing coins.",
+    stripeUnavailable: "Payments are not available right now. Please try again later.",
+    stripeError: "Payment failed. Please try again.",
 
     // Profile
     profile: "Profile",
@@ -309,6 +312,9 @@ export const translations = {
     bestValue: "أفضل قيمة",
     save33: "وفّر 33%",
     save47: "وفّر 47%",
+    loginRequiredForPurchase: "يرجى تسجيل الدخول قبل شراء العملات.",
+    stripeUnavailable: "المدفوعات غير متاحة الآن. يرجى المحاولة لاحقاً.",
+    stripeError: "فشلت عملية الدفع. يرجى المحاولة مرة أخرى.",
 
     profile: "الملف الشخصي",
     account: "الحساب",
@@ -490,6 +496,9 @@ export const translations = {
     bestValue: "Meilleur rapport qualité-prix",
     save33: "Économisez 33%",
     save47: "Économisez 47%",
+    loginRequiredForPurchase: "Veuillez vous connecter avant d'acheter des pièces.",
+    stripeUnavailable: "Les paiements ne sont pas disponibles pour l'instant. Veuillez réessayer plus tard.",
+    stripeError: "Paiement échoué. Veuillez réessayer.",
 
     profile: "Profil",
     account: "COMPTE",
