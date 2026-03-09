@@ -280,6 +280,49 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(240).duration(400)} style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>LEGAL</Text>
+
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Pressable
+              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => router.push({ pathname: "/legal", params: { type: "privacy" } })}
+            >
+              <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
+                <Ionicons name="shield-outline" size={20} color={theme.tint} />
+              </View>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+            </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+            <Pressable
+              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => router.push({ pathname: "/legal", params: { type: "terms" } })}
+            >
+              <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
+                <Ionicons name="document-text-outline" size={20} color={theme.tint} />
+              </View>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>Terms & Conditions</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+            </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+            <Pressable
+              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => router.push({ pathname: "/legal", params: { type: "about" } })}
+            >
+              <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
+                <Ionicons name="information-circle-outline" size={20} color={theme.tint} />
+              </View>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>About</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+            </Pressable>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(320).duration(400)} style={styles.section}>
           <Text style={[styles.sectionLabel, { color: theme.destructive + "AA", fontFamily: "Inter_600SemiBold" }]}>DANGER ZONE</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
