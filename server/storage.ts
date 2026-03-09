@@ -4,7 +4,7 @@ import { contacts, profiles, phoneVerifications, removedNumbers, type InsertCont
 import { eq, sql, and, notInArray, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool);
 
 export async function upsertContacts(items: InsertContact[]): Promise<number> {

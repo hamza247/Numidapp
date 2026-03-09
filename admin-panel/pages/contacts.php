@@ -34,6 +34,10 @@ ob_start();
         <button type="submit" class="px-4 py-2.5 bg-[#00C9D4]/10 text-[#00C9D4] rounded-xl text-sm hover:bg-[#00C9D4]/20 transition-colors">Search</button>
         <?php if ($search): ?><a href="/admin/contacts" class="px-4 py-2.5 bg-white/5 text-gray-400 rounded-xl text-sm hover:bg-white/10 transition-colors">Clear</a><?php endif; ?>
     </form>
+    <a href="/admin/contacts/export?search=<?= urlencode($search) ?>" class="shrink-0 flex items-center gap-2 px-4 py-2.5 bg-green-500/10 text-green-400 rounded-xl text-sm hover:bg-green-500/20 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export Excel
+    </a>
 </div>
 
 <div class="bg-[#0F1623] border border-white/5 rounded-2xl overflow-hidden">

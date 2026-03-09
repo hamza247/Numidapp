@@ -17,9 +17,20 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 - `lib/query-client.ts` - React Query client and API helpers
 - `components/CountryPicker.tsx` - Country selector modal
 - `components/ErrorBoundary.tsx` - Error boundary wrapper
-- `server/routes.ts` - API routes (upload, search)
-- `server/storage.ts` - Database storage layer
+- `server/routes.ts` - API routes (upload, search, app-settings)
+- `server/storage.ts` - Database storage layer (exports `pool` for raw queries)
 - `constants/colors.ts` - Theme colors (dark/light)
+
+## Admin Panel (Plain PHP)
+- Location: `admin-panel/` served via Express proxy at `/admin`
+- Admin workflow: `cd admin-panel && php -S 0.0.0.0:8000 index.php` on port 8000
+- Login: `/admin/login` (credentials: `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars, default admin/admin123)
+- Pages: dashboard, users, user-detail, contacts (with export), removed numbers, stripe config, admob config, settings
+- `app_settings` table: key-value store for runtime config (maintenance_mode, stripe_*, ads_*, admob_*)
+- Helper functions `getSetting()` / `setSetting()` defined in `index.php`
+- Settings API: `GET /api/app-settings` returns public settings for mobile app
+- Maintenance mode: enforced via Express middleware on all `/api/*` routes (except `/api/app-settings`), returns 503
+- Contacts export: CSV download with formula injection protection (sanitizes `= + - @` prefixes)
 
 ## Features
 - Profile creation with full name (validated: first + last) and phone number (validated: 7-15 digits)

@@ -1,6 +1,14 @@
 <?php
 $action = $_POST['action'] ?? '';
 
+if ($action === 'toggle_maintenance') {
+    $val = $_POST['maintenance_mode'] ?? '0';
+    setSetting($db, 'maintenance_mode', $val);
+    $_SESSION['flash_success'] = $val === '1' ? "Maintenance mode enabled." : "Maintenance mode disabled.";
+    header("Location: /admin/settings");
+    exit;
+}
+
 if ($action === 'grant_coins') {
     $phone = $_POST['grant_phone'] ?? '';
     $amount = (int)($_POST['grant_amount'] ?? 0);

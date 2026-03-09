@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified, getCoins, updateCoins, setCoinsExact } from "./storage";
+import { pool, upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified, getCoins, updateCoins, setCoinsExact } from "./storage";
 import { z } from "zod";
 
 async function sendSmsOtp(to: string, code: string): Promise<boolean> {
@@ -85,6 +85,19 @@ const loginSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  await pool.query("CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(255) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())");
+
+  app.use("/api", async (req: Request, res: Response, next) => {
+    if (req.path === "/app-settings") return next();
+    try {
+      const result = await pool.query("SELECT value FROM app_settings WHERE key = 'maintenance_mode'");
+      if (result.rows.length > 0 && result.rows[0].value === '1') {
+        return res.status(503).json({ error: "App is under maintenance. Please try again later." });
+      }
+    } catch {}
+    next();
+  });
+
   app.post("/api/auth/send-otp", async (req: Request, res: Response) => {
     const parsed = sendOtpSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -297,6 +310,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Update coins error:", err);
       return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.get("/api/app-settings", async (_req: Request, res: Response) => {
+    try {
+      const result = await pool.query("SELECT key, value FROM app_settings WHERE key IN ('maintenance_mode', 'ads_enabled', 'ad_provider', 'custom_banner_url', 'custom_banner_link', 'ad_frequency', 'rewarded_coin_amount', 'stripe_enabled', 'stripe_mode', 'stripe_currency', 'stripe_coin_price', 'stripe_coin_amount')");
+      const settings: Record<string, string> = {};
+      for (const row of result.rows) {
+        settings[row.key] = row.value;
+      }
+      return res.json(settings);
+    } catch (err) {
+      console.error("App settings error:", err);
+      return res.json({});
     }
   });
 

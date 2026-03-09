@@ -4,9 +4,30 @@ $pageTitle = 'Settings';
 $avgCoins = round((float)$db->query("SELECT COALESCE(AVG(coins), 0) FROM profiles")->fetchColumn(), 1);
 $zeroCoins = (int)$db->query("SELECT COUNT(*) FROM profiles WHERE coins = 0")->fetchColumn();
 $richest = $db->query("SELECT full_name, phone, coins FROM profiles ORDER BY coins DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+$maintenanceMode = getSetting($db, 'maintenance_mode', '0');
 
 ob_start();
 ?>
+<div class="bg-[#0F1623] border border-white/5 rounded-2xl p-5 mb-5">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-sm font-semibold text-white mb-1">Maintenance Mode</h2>
+            <p class="text-xs text-gray-500">When enabled, the app shows a maintenance screen to all users. Admin panel remains accessible.</p>
+        </div>
+        <form method="POST" action="/admin/settings" class="flex items-center gap-3">
+            <input type="hidden" name="action" value="toggle_maintenance">
+            <input type="hidden" name="maintenance_mode" value="<?= $maintenanceMode === '1' ? '0' : '1' ?>">
+            <?php if ($maintenanceMode === '1'): ?>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-orange-400/10 text-orange-400 border border-orange-400/20">ACTIVE</span>
+                <button type="submit" class="px-4 py-2.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 rounded-xl text-sm font-medium transition-colors">Turn OFF</button>
+            <?php else: ?>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-400 border border-green-500/20">OFF</span>
+                <button type="submit" class="px-4 py-2.5 bg-orange-400/10 text-orange-400 hover:bg-orange-400/20 rounded-xl text-sm font-medium transition-colors" onclick="return confirm('Enable maintenance mode? Users will not be able to use the app.')">Turn ON</button>
+            <?php endif; ?>
+        </form>
+    </div>
+</div>
+
 <div class="grid grid-cols-2 gap-4 mb-5">
     <div class="bg-[#0F1623] border border-white/5 rounded-2xl p-5">
         <h2 class="text-sm font-semibold text-white mb-4">App Configuration</h2>

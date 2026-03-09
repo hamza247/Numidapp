@@ -16,6 +16,20 @@ if ($dbUrl) {
     ]);
 }
 
+$db->exec("CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(255) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())");
+
+function getSetting(PDO $db, string $key, string $default = ''): string {
+    $stmt = $db->prepare("SELECT value FROM app_settings WHERE key = :k");
+    $stmt->execute(['k' => $key]);
+    $val = $stmt->fetchColumn();
+    return $val !== false ? $val : $default;
+}
+
+function setSetting(PDO $db, string $key, string $value): void {
+    $stmt = $db->prepare("INSERT INTO app_settings (key, value, updated_at) VALUES (:k, :v, NOW()) ON CONFLICT (key) DO UPDATE SET value = :v2, updated_at = NOW()");
+    $stmt->execute(['k' => $key, 'v' => $value, 'v2' => $value]);
+}
+
 $adminUser = getenv('ADMIN_USERNAME') ?: 'admin';
 $adminPass = getenv('ADMIN_PASSWORD') ?: 'admin123';
 
@@ -81,6 +95,9 @@ switch (true) {
         $viewPhone = $m[1];
         include __DIR__ . '/pages/user-detail.php';
         break;
+    case $uri === '/admin/contacts/export':
+        include __DIR__ . '/pages/contacts-export.php';
+        exit;
     case $uri === '/admin/contacts':
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
             $db->prepare("DELETE FROM contacts WHERE id = :id")->execute(['id' => (int)$_POST['delete_id']]);
@@ -99,6 +116,20 @@ switch (true) {
         $_SESSION['flash_success'] = "Number restored to search results.";
         header("Location: /admin/removed");
         exit;
+    case $uri === '/admin/stripe':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            include __DIR__ . '/pages/stripe-action.php';
+            exit;
+        }
+        include __DIR__ . '/pages/stripe.php';
+        break;
+    case $uri === '/admin/admob':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            include __DIR__ . '/pages/admob-action.php';
+            exit;
+        }
+        include __DIR__ . '/pages/admob.php';
+        break;
     case $uri === '/admin/settings':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             include __DIR__ . '/pages/settings-action.php';

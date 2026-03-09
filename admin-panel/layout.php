@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#080C14] text-white min-h-screen flex">
+    <?php $maintenanceOn = getSetting($db, 'maintenance_mode', '0') === '1'; ?>
     <aside class="w-60 shrink-0 bg-[#0F1623] border-r border-white/5 flex flex-col min-h-screen fixed left-0 top-0 bottom-0">
         <div class="px-5 py-5 border-b border-white/5">
             <div class="flex items-center gap-3">
@@ -20,6 +21,11 @@
                     <div class="text-xs text-gray-500">Admin Panel</div>
                 </div>
             </div>
+            <?php if ($maintenanceOn): ?>
+                <div class="mt-3 px-3 py-1.5 rounded-lg bg-orange-400/10 border border-orange-400/20 text-center">
+                    <span class="text-xs font-medium text-orange-400">MAINTENANCE MODE ON</span>
+                </div>
+            <?php endif; ?>
         </div>
         <nav class="flex-1 px-3 py-4 space-y-0.5">
             <?php
@@ -28,6 +34,8 @@
                 ['/admin/users', 'Users', 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
                 ['/admin/contacts', 'Contacts', 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'],
                 ['/admin/removed', 'Removed Numbers', 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'],
+                ['/admin/stripe', 'Stripe', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'],
+                ['/admin/admob', 'AdMob / Ads', 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z'],
                 ['/admin/settings', 'Settings', 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z'],
             ];
             $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
