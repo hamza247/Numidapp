@@ -13,14 +13,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import Colors from "@/constants/colors";
+import { useLanguage } from "@/lib/i18n";
 
 type LegalType = "privacy" | "terms" | "about";
-
-const TITLES: Record<LegalType, string> = {
-  privacy: "Privacy Policy",
-  terms: "Terms & Conditions",
-  about: "About",
-};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   const colorScheme = useColorScheme();
@@ -215,8 +210,14 @@ export default function LegalScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { type } = useLocalSearchParams<{ type: LegalType }>();
+  const { t } = useLanguage();
 
   const legalType: LegalType = (type === "privacy" || type === "terms" || type === "about") ? type : "about";
+  const TITLES: Record<LegalType, string> = {
+    privacy: t.privacyPolicyTitle,
+    terms: t.termsTitle,
+    about: t.aboutTitle,
+  };
   const title = TITLES[legalType];
 
   const webTop = Platform.OS === "web" ? 67 : 0;

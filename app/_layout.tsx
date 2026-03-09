@@ -15,6 +15,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { CoinsProvider } from "@/lib/coins";
+import { LanguageProvider, useLanguage } from "@/lib/i18n";
 import { useColorScheme } from "react-native";
 import Colors from "@/constants/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +25,7 @@ SplashScreen.preventAutoHideAsync();
 
 function MaintenanceScreen({ onRetry }: { onRetry: () => void }) {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   return (
     <View style={[styles.maintenanceContainer, {
       paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0),
@@ -33,28 +35,26 @@ function MaintenanceScreen({ onRetry }: { onRetry: () => void }) {
         <View style={styles.maintenanceIconRing}>
           <Ionicons name="construct" size={48} color="#00C9D4" />
         </View>
-        <Text style={styles.maintenanceTitle}>Under Maintenance</Text>
-        <Text style={styles.maintenanceSubtitle}>
-          We're making improvements to give you a better experience. We'll be back shortly.
-        </Text>
+        <Text style={styles.maintenanceTitle}>{t.underMaintenance}</Text>
+        <Text style={styles.maintenanceSubtitle}>{t.maintenanceSub}</Text>
         <View style={styles.maintenanceDivider} />
         <View style={styles.maintenanceMeta}>
           <View style={styles.maintenanceMetaRow}>
             <Ionicons name="time-outline" size={16} color="#6B7280" />
-            <Text style={styles.maintenanceMetaText}>Scheduled maintenance in progress</Text>
+            <Text style={styles.maintenanceMetaText}>{t.scheduledMaintenance}</Text>
           </View>
           <View style={styles.maintenanceMetaRow}>
             <Ionicons name="shield-checkmark-outline" size={16} color="#6B7280" />
-            <Text style={styles.maintenanceMetaText}>Your data is safe</Text>
+            <Text style={styles.maintenanceMetaText}>{t.dataSafe}</Text>
           </View>
           <View style={styles.maintenanceMetaRow}>
             <Ionicons name="notifications-outline" size={16} color="#6B7280" />
-            <Text style={styles.maintenanceMetaText}>We'll notify you when we're back</Text>
+            <Text style={styles.maintenanceMetaText}>{t.notifyBack}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.maintenanceRetry} onPress={onRetry} activeOpacity={0.7}>
           <Ionicons name="refresh-outline" size={16} color="#00C9D4" />
-          <Text style={styles.maintenanceRetryText}>Check Again</Text>
+          <Text style={styles.maintenanceRetryText}>{t.checkAgain}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -145,13 +145,15 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <CoinsProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <KeyboardProvider>
-              <RootLayoutNav />
-            </KeyboardProvider>
-          </GestureHandlerRootView>
-        </CoinsProvider>
+        <LanguageProvider>
+          <CoinsProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <KeyboardProvider>
+                <RootLayoutNav />
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </CoinsProvider>
+        </LanguageProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

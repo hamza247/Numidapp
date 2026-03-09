@@ -19,6 +19,7 @@ import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import { countries, type Country } from "@/lib/countries";
 import { useCoins } from "@/lib/coins";
+import { useLanguage } from "@/lib/i18n";
 
 interface SearchResult {
   storedName: string;
@@ -73,6 +74,7 @@ function ResultCard({
   index: number;
   theme: typeof Colors.dark;
 }) {
+  const { t } = useLanguage();
   const labelStyle = getLabelStyle(item.label, theme);
   const avatarColor = getAvatarColor(item.storedName, theme);
   const initials = getInitials(item.storedName);
@@ -106,7 +108,7 @@ function ResultCard({
           <View style={styles.uploaderRow}>
             <Ionicons name="person-outline" size={13} color={theme.textSecondary} />
             <Text style={[styles.uploaderName, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-              Saved by {item.uploaderName}
+              {t.savedBy} {item.uploaderName}
             </Text>
           </View>
         </View>
@@ -126,6 +128,7 @@ export default function ResultsScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins } = useCoins();
+  const { t } = useLanguage();
 
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +158,7 @@ export default function ResultsScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (e) {
-      setError("Failed to load results. Please try again.");
+      setError("failedToLoad");
     } finally {
       setLoading(false);
     }
@@ -213,7 +216,7 @@ export default function ResultsScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.tint} />
           <Text style={[styles.loadingText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            Searching contacts...
+            {t.searchingContacts}
           </Text>
         </View>
       )}
@@ -222,13 +225,13 @@ export default function ResultsScreen() {
         <Animated.View style={styles.errorContainer} entering={FadeInDown.duration(400)}>
           <Ionicons name="alert-circle-outline" size={48} color={theme.destructive} />
           <Text style={[styles.errorText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            {error}
+            {t.failedToLoad}
           </Text>
           <Pressable
             style={[styles.retryBtn, { backgroundColor: theme.tint }]}
             onPress={() => phone && loadResults(phone)}
           >
-            <Text style={[styles.retryText, { fontFamily: "Inter_600SemiBold" }]}>Try Again</Text>
+            <Text style={[styles.retryText, { fontFamily: "Inter_600SemiBold" }]}>{t.tryAgain}</Text>
           </Pressable>
         </Animated.View>
       )}
@@ -239,10 +242,10 @@ export default function ResultsScreen() {
             <Ionicons name="person-outline" size={40} color={theme.textMuted} />
           </View>
           <Text style={[styles.emptyTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
-            Not Saved Yet
+            {t.notSavedYet}
           </Text>
           <Text style={[styles.emptyBody, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            Nobody in our network has this number saved in their contacts yet. Ask more friends to sync their contacts.
+            {t.notSavedBody}
           </Text>
         </Animated.View>
       )}
@@ -277,7 +280,7 @@ export default function ResultsScreen() {
                       {results.length}
                     </Text>
                     <Text style={[styles.statsLabel, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                      {results.length === 1 ? "person saved this number" : "people saved this number"}
+                      {t.personSaved(results.length)}
                     </Text>
                   </View>
                 </View>
@@ -289,7 +292,7 @@ export default function ResultsScreen() {
                       <View key={label} style={styles.breakdownItem}>
                         <View style={[styles.breakdownDot, { backgroundColor: ls.text }]} />
                         <Text style={[styles.breakdownText, { color: theme.textSecondary, fontFamily: "Inter_500Medium" }]}>
-                          {count} as {label}
+                          {t.savedAs(count, label)}
                         </Text>
                       </View>
                     );
@@ -298,7 +301,7 @@ export default function ResultsScreen() {
               </View>
 
               <Text style={[styles.detailsHeader, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
-                CONTACTS DETAILS
+                {t.contactsDetails}
               </Text>
             </Animated.View>
           }

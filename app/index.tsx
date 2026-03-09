@@ -26,6 +26,7 @@ import { fetch } from "expo/fetch";
 import CountryPicker from "@/components/CountryPicker";
 import { countries, type Country } from "@/lib/countries";
 import { useCoins, FREE_DAILY_SEARCHES, SEARCH_COST } from "@/lib/coins";
+import { useLanguage } from "@/lib/i18n";
 
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
@@ -41,6 +42,7 @@ export default function HomeScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, freeSearchesRemaining, spendSearch, loaded: coinsLoaded, refreshCoins } = useCoins();
+  const { t } = useLanguage();
 
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -115,16 +117,16 @@ export default function HomeScreen() {
 
   function validateName(name: string): string | null {
     const trimmed = name.trim();
-    if (trimmed.length < 2) return "Name must be at least 2 characters";
-    if (trimmed.length > 100) return "Name is too long";
-    if (!/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/.test(trimmed)) return "Name contains invalid characters";
-    if (trimmed.split(/\s+/).length < 2) return "Please enter your full name (first and last)";
+    if (trimmed.length < 2) return t.nameMin;
+    if (trimmed.length > 100) return t.nameTooLong;
+    if (!/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/.test(trimmed)) return t.nameInvalid;
+    if (trimmed.split(/\s+/).length < 2) return t.nameFullRequired;
     return null;
   }
 
   function validatePhone(digits: string): string | null {
-    if (digits.length < 7) return "Phone number is too short";
-    if (digits.length > 15) return "Phone number is too long";
+    if (digits.length < 7) return t.phoneTooShort;
+    if (digits.length > 15) return t.phoneTooLong;
     return null;
   }
 
@@ -176,7 +178,7 @@ export default function HomeScreen() {
 
   async function verifyOtpAndFinish() {
     if (otpCode.length !== 6) {
-      setOtpError("Please enter the complete 6-digit code");
+      setOtpError(t.enterComplete);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -220,9 +222,9 @@ export default function HomeScreen() {
     const cpw = confirmPassword.trim();
     let pError: string | null = null;
     let cpError: string | null = null;
-    if (pw.length < 6) pError = "Password must be at least 6 characters";
-    if (!cpw) cpError = "Please confirm your password";
-    else if (pw !== cpw) cpError = "Passwords do not match";
+    if (pw.length < 6) pError = t.passwordMin;
+    if (!cpw) cpError = t.passwordConfirmRequired;
+    else if (pw !== cpw) cpError = t.passwordMismatch;
     setPasswordError(pError);
     setConfirmPasswordError(cpError);
     if (pError || cpError) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
@@ -273,7 +275,7 @@ export default function HomeScreen() {
   async function performLogin() {
     const digits = loginPhone.replace(/\D/g, "");
     if (digits.length < 7 || !loginPassword) {
-      setLoginError(!loginPassword ? "Please enter your password" : "Please enter a valid phone number");
+      setLoginError(!loginPassword ? t.passwordRequired : t.phoneRequired);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -339,11 +341,7 @@ export default function HomeScreen() {
     const { status } = await Contacts.requestPermissionsAsync();
     if (status !== "granted") {
       setSyncing(false);
-      Alert.alert(
-        "Permission Required",
-        "We need access to your contacts to help others discover who saved their number.",
-        [{ text: "OK" }]
-      );
+      Alert.alert(t.permissionRequired, t.permissionMsg, [{ text: "OK" }]);
       return;
     }
 
@@ -370,7 +368,7 @@ export default function HomeScreen() {
 
     if (items.length === 0) {
       setSyncing(false);
-      Alert.alert("No Contacts", "No phone contacts found.");
+      Alert.alert(t.syncFailed, t.syncNoContacts);
       return;
     }
 
@@ -382,11 +380,11 @@ export default function HomeScreen() {
       if (userPhone) await AsyncStorage.setItem(syncedKey(userPhone), "true");
       setSynced(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Synced!", `${items.length} contacts uploaded successfully.`);
+      Alert.alert("✓", t.syncSuccess(items.length));
     } catch (e: any) {
       console.error("Sync error:", e?.message || e);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Sync Failed", `Error: ${e?.message || "Please check your connection and try again."}`);
+      Alert.alert(t.syncFailed, `${e?.message || ""}`);
     } finally {
       setSyncing(false);
     }
@@ -395,14 +393,10 @@ export default function HomeScreen() {
   async function performSearch(phone?: string, countryOverride?: Country) {
     if (!synced) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        "Sync Required",
-        "You need to upload your contacts before you can search. This helps build the network for everyone.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Sync Now", onPress: syncContacts },
-        ]
-      );
+      Alert.alert(t.syncRequired, t.syncRequiredMsg, [
+        { text: t.cancel, style: "cancel" },
+        { text: t.syncNow, onPress: syncContacts },
+      ]);
       return;
     }
     const digits = (phone ?? searchPhone).replace(/\D/g, "");
@@ -415,28 +409,20 @@ export default function HomeScreen() {
 
     if (freeSearchesRemaining <= 0 && coins < SEARCH_COST) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        "No Searches Left",
-        `You've used all ${FREE_DAILY_SEARCHES} free searches today and don't have enough coins. Each extra search costs ${SEARCH_COST} coin.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Buy Coins", onPress: () => router.push("/store") },
-        ]
-      );
+      Alert.alert(t.noSearchesLeft, t.noSearchesMsg(FREE_DAILY_SEARCHES, SEARCH_COST), [
+        { text: t.cancel, style: "cancel" },
+        { text: t.buyCoins, onPress: () => router.push("/store") },
+      ]);
       return;
     }
 
     const result = await spendSearch();
     if (!result.allowed) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        "Not Enough Coins",
-        `Each search costs ${SEARCH_COST} coin. You currently have ${coins} coins.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Buy Coins", onPress: () => router.push("/store") },
-        ]
-      );
+      Alert.alert(t.notEnoughCoins, t.notEnoughCoinsMsg(SEARCH_COST, coins), [
+        { text: t.cancel, style: "cancel" },
+        { text: t.buyCoins, onPress: () => router.push("/store") },
+      ]);
       return;
     }
 
@@ -515,10 +501,10 @@ export default function HomeScreen() {
             </View>
 
             <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
-              Verify Your Number
+              {t.verifyTitle}
             </Text>
             <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-              We sent a 6-digit code to{"\n"}
+              {t.verifySubtitle}{"\n"}
               <Text style={{ color: theme.tint, fontFamily: "Inter_600SemiBold" }}>
                 +{pendingPhone}
               </Text>
@@ -584,7 +570,7 @@ export default function HomeScreen() {
                 <ActivityIndicator size="small" color="#000" />
               ) : (
                 <>
-                  <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Verify Code</Text>
+                  <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.verify}</Text>
                   <Ionicons name="checkmark" size={18} color="#000" />
                 </>
               )}
@@ -592,18 +578,18 @@ export default function HomeScreen() {
 
             <View style={styles.resendRow}>
               <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                Didn't receive the code?
+                {t.didntReceive}
               </Text>
               <Pressable onPress={resendOtpCode} disabled={sendingOtp}>
                 <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold", opacity: sendingOtp ? 0.5 : 1 }]}>
-                  {sendingOtp ? "Sending..." : "Resend"}
+                  {sendingOtp ? t.resending : t.resend}
                 </Text>
               </Pressable>
             </View>
 
             <Pressable onPress={() => { setOnboardingStep("register"); setOtpCode(""); setOtpError(null); }}>
               <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                Change phone number
+                {t.changePhone}
               </Text>
             </Pressable>
           </Animated.View>
@@ -624,23 +610,23 @@ export default function HomeScreen() {
             </View>
 
             <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
-              Create Password
+              {t.setPasswordTitle}
             </Text>
             <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-              Set a password to secure your account
+              {t.setPasswordSubtitle}
             </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Password</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.newPassword}</Text>
               <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: passwordError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
                 <Ionicons name="lock-closed-outline" size={18} color={passwordError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                  placeholder="Minimum 6 characters"
+                  placeholder={t.passwordPlaceholder}
                   placeholderTextColor={theme.textMuted}
                   secureTextEntry={!showNewPassword}
                   value={newPassword}
-                  onChangeText={(t) => { setNewPassword(t); if (passwordError) setPasswordError(null); }}
+                  onChangeText={(v) => { setNewPassword(v); if (passwordError) setPasswordError(null); }}
                   returnKeyType="next"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -653,16 +639,16 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Confirm Password</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.confirmPassword}</Text>
               <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: confirmPasswordError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
                 <Ionicons name="lock-closed-outline" size={18} color={confirmPasswordError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                  placeholder="Re-enter your password"
+                  placeholder={t.confirmPasswordPlaceholder}
                   placeholderTextColor={theme.textMuted}
                   secureTextEntry={!showConfirmPassword}
                   value={confirmPassword}
-                  onChangeText={(t) => { setConfirmPassword(t); if (confirmPasswordError) setConfirmPasswordError(null); }}
+                  onChangeText={(v) => { setConfirmPassword(v); if (confirmPasswordError) setConfirmPasswordError(null); }}
                   returnKeyType="done"
                   onSubmitEditing={createAccountWithPassword}
                   autoCapitalize="none"
@@ -681,13 +667,13 @@ export default function HomeScreen() {
               disabled={savingPassword}
             >
               {savingPassword ? <ActivityIndicator size="small" color="#000" /> : (
-                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text><Ionicons name="checkmark" size={18} color="#000" /></>
+                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.createAccount}</Text><Ionicons name="checkmark" size={18} color="#000" /></>
               )}
             </Pressable>
 
             <Pressable onPress={() => { setOnboardingStep("verify"); setNewPassword(""); setConfirmPassword(""); }}>
               <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                Back to verification
+                {t.backToVerification}
               </Text>
             </Pressable>
           </Animated.View>
@@ -708,24 +694,24 @@ export default function HomeScreen() {
             </View>
 
             <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
-              Welcome Back
+              {t.loginTitle}
             </Text>
             <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-              Log in with your phone number and password
+              {t.loginWith}
             </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Phone Number</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.phoneNumber}</Text>
               <View style={styles.inputRow}>
                 <CountryPicker selected={selectedCountry} onSelect={setSelectedCountry} />
                 <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.border, flex: 1 }]}>
                   <TextInput
                     style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                    placeholder="Phone number"
+                    placeholder={t.phonePlaceholder}
                     placeholderTextColor={theme.textMuted}
                     keyboardType="phone-pad"
                     value={loginPhone}
-                    onChangeText={(t) => { setLoginPhone(t.replace(/\D/g, "")); if (loginError) setLoginError(null); }}
+                    onChangeText={(v) => { setLoginPhone(v.replace(/\D/g, "")); if (loginError) setLoginError(null); }}
                     returnKeyType="next"
                     maxLength={15}
                   />
@@ -734,16 +720,16 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Password</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>{t.password}</Text>
               <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: loginError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
                 <Ionicons name="lock-closed-outline" size={18} color={loginError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                  placeholder="Your password"
+                  placeholder={t.password}
                   placeholderTextColor={theme.textMuted}
                   secureTextEntry={!showLoginPassword}
                   value={loginPassword}
-                  onChangeText={(t) => { setLoginPassword(t); if (loginError) setLoginError(null); }}
+                  onChangeText={(v) => { setLoginPassword(v); if (loginError) setLoginError(null); }}
                   returnKeyType="done"
                   onSubmitEditing={performLogin}
                   autoCapitalize="none"
@@ -762,14 +748,14 @@ export default function HomeScreen() {
               disabled={loggingIn}
             >
               {loggingIn ? <ActivityIndicator size="small" color="#000" /> : (
-                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Log In</Text><Ionicons name="arrow-forward" size={18} color="#000" /></>
+                <><Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.login}</Text><Ionicons name="arrow-forward" size={18} color="#000" /></>
               )}
             </Pressable>
 
             <View style={styles.resendRow}>
-              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>Don't have an account?</Text>
+              <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>{t.noAccount}</Text>
               <Pressable onPress={() => { setOnboardingStep("register"); setLoginPhone(""); setLoginPassword(""); setLoginError(null); }}>
-                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>Create one</Text>
+                <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>{t.createOne}</Text>
               </Pressable>
             </View>
           </Animated.View>
@@ -789,26 +775,26 @@ export default function HomeScreen() {
           </View>
 
           <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
-            Who Saved Me?
+            {t.appName}
           </Text>
           <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            Create your profile to discover who has your number saved.
+            {t.registerTagline}
           </Text>
 
           <View style={styles.fieldGroup}>
             <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
-              Full Name
+              {t.fullName}
             </Text>
             <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: nameError ? theme.destructive : theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
               <Ionicons name="person-outline" size={18} color={nameError ? theme.destructive : theme.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                placeholder="First and last name"
+                placeholder={t.fullNamePlaceholder}
                 placeholderTextColor={theme.textMuted}
                 autoCapitalize="words"
                 autoCorrect={false}
                 value={onboardingName}
-                onChangeText={(t) => { setOnboardingName(t); if (nameError) setNameError(null); }}
+                onChangeText={(v) => { setOnboardingName(v); if (nameError) setNameError(null); }}
                 returnKeyType="next"
                 maxLength={100}
               />
@@ -822,7 +808,7 @@ export default function HomeScreen() {
 
           <View style={styles.fieldGroup}>
             <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
-              Phone Number
+              {t.phoneNumber}
             </Text>
             <View style={[styles.inputRow]}>
               <CountryPicker selected={selectedCountry} onSelect={setSelectedCountry} />
@@ -830,11 +816,11 @@ export default function HomeScreen() {
                 <TextInput
                   ref={inputRef}
                   style={[styles.phoneInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                  placeholder="Phone number"
+                  placeholder={t.phonePlaceholder}
                   placeholderTextColor={theme.textMuted}
                   keyboardType="phone-pad"
                   value={onboardingPhone}
-                  onChangeText={(t) => { setOnboardingPhone(t.replace(/\D/g, "")); if (phoneError) setPhoneError(null); }}
+                  onChangeText={(v) => { setOnboardingPhone(v.replace(/\D/g, "")); if (phoneError) setPhoneError(null); }}
                   returnKeyType="done"
                   onSubmitEditing={sendOtpCode}
                   maxLength={15}
@@ -860,20 +846,20 @@ export default function HomeScreen() {
               <ActivityIndicator size="small" color="#000" />
             ) : (
               <>
-                <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>Send Verification Code</Text>
+                <Text style={[styles.continueBtnText, { fontFamily: "Inter_600SemiBold" }]}>{t.sendCode}</Text>
                 <Ionicons name="arrow-forward" size={18} color="#000" />
               </>
             )}
           </Pressable>
 
           <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-            Your number is never shown to other users
+            {t.privacyNote}
           </Text>
 
           <View style={styles.resendRow}>
-            <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>Already have an account?</Text>
+            <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>{t.alreadyHaveAccount}</Text>
             <Pressable onPress={() => { setOnboardingStep("login"); setLoginPhone(""); setLoginPassword(""); setLoginError(null); }}>
-              <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>Log in</Text>
+              <Text style={[styles.resendLink, { color: theme.tint, fontFamily: "Inter_600SemiBold" }]}>{t.login}</Text>
             </Pressable>
           </View>
         </Animated.View>
@@ -894,10 +880,10 @@ export default function HomeScreen() {
         >
           <View style={styles.headerLeft}>
             <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
-              Who Saved Me
+              {t.appName}
             </Text>
             <Text style={[styles.headerSub, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-              Discover who has your contact
+              {t.appTagline}
             </Text>
           </View>
           <View style={styles.headerActions}>
@@ -919,11 +905,11 @@ export default function HomeScreen() {
             <View style={[styles.searchCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <TextInput
                 style={[styles.searchInput, { color: theme.text, fontFamily: "Inter_500Medium" }]}
-                placeholder="Phone number"
+                placeholder={t.searchPlaceholder}
                 placeholderTextColor={theme.textMuted}
                 keyboardType="phone-pad"
                 value={searchPhone}
-                onChangeText={(t) => setSearchPhone(t.replace(/\D/g, ""))}
+                onChangeText={(v) => setSearchPhone(v.replace(/\D/g, ""))}
                 returnKeyType="search"
                 onSubmitEditing={() => performSearch()}
                 maxLength={15}
@@ -952,8 +938,8 @@ export default function HomeScreen() {
             <Ionicons name="search-outline" size={12} color={freeSearchesRemaining > 0 ? theme.tint : "#FFD700"} />
             <Text style={[styles.searchQuotaText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
               {freeSearchesRemaining > 0
-                ? `${freeSearchesRemaining} free search${freeSearchesRemaining === 1 ? "" : "es"} left today`
-                : `${SEARCH_COST} coin per search`}
+                ? t.freeSearches(freeSearchesRemaining)
+                : t.useCoin}
             </Text>
           </View>
         </Animated.View>
@@ -965,10 +951,10 @@ export default function HomeScreen() {
                 <Ionicons name="lock-closed" size={24} color={theme.tint} />
               </View>
               <Text style={[styles.syncGateTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
-                Upload contacts to unlock search
+                {t.uploadContactsTitle}
               </Text>
               <Text style={[styles.syncGateBody, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                Share your contact list to help build the network. You can then search any number to see who has it saved.
+                {t.uploadContactsBody}
               </Text>
               <Pressable
                 style={({ pressed }) => [
@@ -983,7 +969,7 @@ export default function HomeScreen() {
                   <>
                     <Ionicons name="cloud-upload-outline" size={18} color="#000" />
                     <Text style={[styles.syncGateBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-                      Sync Contacts Now
+                      {t.syncGateBtn}
                     </Text>
                   </>
                 )}
@@ -996,11 +982,11 @@ export default function HomeScreen() {
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
-                Recent
+                {t.recent}
               </Text>
               <Pressable onPress={clearHistory} hitSlop={12}>
                 <Text style={[styles.clearText, { color: theme.tint, fontFamily: "Inter_500Medium" }]}>
-                  Clear
+                  {t.clear}
                 </Text>
               </Pressable>
             </View>
@@ -1046,7 +1032,7 @@ export default function HomeScreen() {
           >
             <Ionicons name="search-outline" size={48} color={theme.textMuted} />
             <Text style={[styles.emptyText, { color: theme.textMuted, fontFamily: "Inter_500Medium" }]}>
-              Enter any phone number to see{"\n"}who has it saved
+              {t.enterNumberHint}
             </Text>
           </Animated.View>
         )}

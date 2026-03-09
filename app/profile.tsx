@@ -10,6 +10,7 @@ import {
   ScrollView,
   Image,
   Platform,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +23,7 @@ import Colors from "@/constants/colors";
 import { useCoins } from "@/lib/coins";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
+import { useLanguage, type Language } from "@/lib/i18n";
 
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
@@ -31,12 +33,26 @@ const syncedKey = (phone: string) => `contacts_synced_${phone}`;
 const removedKey = (phone: string) => `number_removed_${phone}`;
 const REMOVE_PHONE_COST = 3;
 
+interface LangOption {
+  code: Language;
+  label: string;
+  native: string;
+  flag: string;
+}
+
+const LANG_OPTIONS: LangOption[] = [
+  { code: "en", label: "English", native: "English", flag: "🇺🇸" },
+  { code: "ar", label: "Arabic", native: "العربية", flag: "🇸🇦" },
+  { code: "fr", label: "French", native: "Français", flag: "🇫🇷" },
+];
+
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, addCoins, refreshCoins } = useCoins();
+  const { t, language, setLanguage } = useLanguage();
 
   const [userName, setUserName] = useState<string | null>(null);
   const [userPhone, setUserPhone] = useState<string | null>(null);
@@ -44,6 +60,7 @@ export default function ProfileScreen() {
   const [removing, setRemoving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [numberRemoved, setNumberRemoved] = useState(false);
+  const [showLangPicker, setShowLangPicker] = useState(false);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
@@ -79,7 +96,7 @@ export default function ProfileScreen() {
       } catch {
         const localAvatar = await AsyncStorage.getItem(AVATAR_KEY);
         if (localAvatar) setAvatarUri(localAvatar);
-        const localRemoved = await AsyncStorage.getItem(removedKey(phone));
+        const localRemoved = await AsyncStorage.getItem(removedKey(phone ?? ""));
         setNumberRemoved(localRemoved === "true");
       }
     }
@@ -88,7 +105,7 @@ export default function ProfileScreen() {
   async function pickAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Required", "Please allow access to your photo library to set a profile picture.");
+      Alert.alert(t.permissionRequired, t.permissionMsg);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -119,22 +136,22 @@ export default function ProfileScreen() {
     if (!userPhone) return;
     if (coins < REMOVE_PHONE_COST) {
       Alert.alert(
-        "Not Enough Coins",
-        `Removing your number from search results costs ${REMOVE_PHONE_COST} coins. You currently have ${coins} coin${coins !== 1 ? "s" : ""}.`,
+        t.notEnoughCoins,
+        t.notEnoughCoinsRemove(REMOVE_PHONE_COST, coins),
         [
-          { text: "Cancel", style: "cancel" },
-          { text: "Get Coins", onPress: () => { router.back(); router.push("/store"); } },
+          { text: t.cancel, style: "cancel" },
+          { text: t.getCoins, onPress: () => { router.back(); router.push("/store"); } },
         ]
       );
       return;
     }
     Alert.alert(
-      "Remove From Search Results",
-      `This will remove your phone number from everyone's search results. It costs ${REMOVE_PHONE_COST} coins. This cannot be undone.`,
+      t.removeFromSearch,
+      t.removeConfirm(REMOVE_PHONE_COST),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: `Remove (${REMOVE_PHONE_COST} coins)`,
+          text: t.removeCta(REMOVE_PHONE_COST),
           style: "destructive",
           onPress: async () => {
             setRemoving(true);
@@ -147,12 +164,12 @@ export default function ProfileScreen() {
                 if (userPhone) await AsyncStorage.setItem(removedKey(userPhone), "true");
                 setNumberRemoved(true);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert("Done", "Your phone number has been removed from all search results.");
+                Alert.alert("✓", t.removeSuccess);
               } else {
-                Alert.alert("Error", "Failed to remove your phone number. Please try again.");
+                Alert.alert("Error", t.removeFailed);
               }
             } catch {
-              Alert.alert("Error", "Could not connect to the server.");
+              Alert.alert("Error", t.removeFailed);
             } finally {
               setRemoving(false);
             }
@@ -163,10 +180,10 @@ export default function ProfileScreen() {
   }
 
   async function handleLogout() {
-    Alert.alert("Log Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t.logOut, t.logOutConfirm, [
+      { text: t.cancel, style: "cancel" },
       {
-        text: "Log Out",
+        text: t.logOut,
         style: "destructive",
         onPress: async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -181,12 +198,12 @@ export default function ProfileScreen() {
   async function handleDeleteAccount() {
     if (!userPhone) return;
     Alert.alert(
-      "Delete Account",
-      "This will permanently delete your account and all your uploaded contacts. This cannot be undone.",
+      t.deleteConfirmTitle,
+      t.deleteConfirmMsg,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Delete Account",
+          text: t.delete,
           style: "destructive",
           onPress: async () => {
             setDeleting(true);
@@ -201,10 +218,10 @@ export default function ProfileScreen() {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.replace("/");
               } else {
-                Alert.alert("Error", "Failed to delete your account. Please try again.");
+                Alert.alert("Error", t.deleteFailed);
               }
             } catch {
-              Alert.alert("Error", "Could not connect to the server.");
+              Alert.alert("Error", t.deleteFailed);
             } finally {
               setDeleting(false);
             }
@@ -214,9 +231,20 @@ export default function ProfileScreen() {
     );
   }
 
+  function handleSelectLanguage(lang: Language) {
+    if (lang === language) {
+      setShowLangPicker(false);
+      return;
+    }
+    setShowLangPicker(false);
+    setLanguage(lang);
+  }
+
   const initials = userName
     ? userName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "?";
+
+  const currentLang = LANG_OPTIONS.find((l) => l.code === language);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -224,7 +252,7 @@ export default function ProfileScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={theme.text} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>Profile</Text>
+        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>{t.profile}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -255,7 +283,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>ACCOUNT</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.account}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -265,7 +293,7 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="image-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>Edit Photo</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.tapToChange}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
 
@@ -278,10 +306,10 @@ export default function ProfileScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: "#00C9D4", fontFamily: "Inter_500Medium" }]}>
-                    Number Removed
+                    {t.numberRemoved}
                   </Text>
                   <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                    Hidden from all search results
+                    {t.numberRemovedSub}
                   </Text>
                 </View>
               </View>
@@ -300,10 +328,10 @@ export default function ProfileScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
-                    Remove My Number
+                    {t.removeMyNumber}
                   </Text>
                   <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                    Hide from search results
+                    {t.removeMyNumberSub}
                   </Text>
                 </View>
                 <View style={styles.costBadge}>
@@ -315,8 +343,30 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.delay(130).duration(400)} style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.preferences}</Text>
+
+          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Pressable
+              style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => setShowLangPicker(true)}
+            >
+              <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
+                <Ionicons name="language-outline" size={20} color={theme.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.language}</Text>
+                <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                  {currentLang?.flag} {currentLang?.native}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+            </Pressable>
+          </View>
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>SESSION</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.session}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -326,14 +376,14 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="log-out-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>Log Out</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.logOut}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(240).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>LEGAL</Text>
+        <Animated.View entering={FadeInDown.delay(220).duration(400)} style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: "Inter_600SemiBold" }]}>{t.legal}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -343,7 +393,7 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="shield-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.privacyPolicy}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
 
@@ -356,7 +406,7 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="document-text-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>Terms & Conditions</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.termsConditions}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
 
@@ -369,14 +419,14 @@ export default function ProfileScreen() {
               <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
                 <Ionicons name="information-circle-outline" size={20} color={theme.tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>About</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: "Inter_500Medium" }]}>{t.about}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
             </Pressable>
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(320).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: theme.destructive + "AA", fontFamily: "Inter_600SemiBold" }]}>DANGER ZONE</Text>
+        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: theme.destructive + "AA", fontFamily: "Inter_600SemiBold" }]}>{t.dangerZone}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
@@ -393,10 +443,10 @@ export default function ProfileScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowLabel, { color: theme.destructive, fontFamily: "Inter_500Medium" }]}>
-                  Delete Account
+                  {t.deleteAccount}
                 </Text>
                 <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-                  Permanently remove all data
+                  {t.deleteAccountSub}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={theme.destructive + "80"} />
@@ -404,6 +454,43 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      <Modal
+        visible={showLangPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangPicker(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowLangPicker(false)}>
+          <Pressable style={[styles.langModal, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Text style={[styles.langModalTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
+              {t.selectLanguage}
+            </Text>
+            {LANG_OPTIONS.map((opt, idx) => (
+              <React.Fragment key={opt.code}>
+                {idx > 0 && <View style={[styles.langDivider, { backgroundColor: theme.border }]} />}
+                <Pressable
+                  style={({ pressed }) => [styles.langRow, { opacity: pressed ? 0.7 : 1 }]}
+                  onPress={() => handleSelectLanguage(opt.code)}
+                >
+                  <Text style={styles.langFlag}>{opt.flag}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.langNative, { color: theme.text, fontFamily: "Inter_600SemiBold" }]}>
+                      {opt.native}
+                    </Text>
+                    <Text style={[styles.langEnglish, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
+                      {opt.label}
+                    </Text>
+                  </View>
+                  {language === opt.code && (
+                    <Ionicons name="checkmark-circle" size={22} color={theme.tint} />
+                  )}
+                </Pressable>
+              </React.Fragment>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -482,4 +569,36 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   costText: { fontSize: 12, color: "#FFD700" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+  },
+  langModal: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    padding: 8,
+  },
+  langModalTitle: {
+    fontSize: 16,
+    textAlign: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  langRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  langFlag: { fontSize: 26 },
+  langNative: { fontSize: 16 },
+  langEnglish: { fontSize: 12, marginTop: 1 },
+  langDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
 });

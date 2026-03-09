@@ -17,6 +17,7 @@ import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { useCoins } from "@/lib/coins";
+import { useLanguage } from "@/lib/i18n";
 
 interface CoinPackage {
   id: string;
@@ -29,10 +30,10 @@ interface CoinPackage {
 
 const PACKAGES: CoinPackage[] = [
   { id: "starter", coins: 5, price: 0.99 },
-  { id: "basic", coins: 15, price: 1.99, label: "Save 33%" },
-  { id: "popular", coins: 40, price: 3.99, popular: true, label: "Most Popular" },
-  { id: "pro", coins: 100, price: 7.99, label: "Save 47%" },
-  { id: "mega", coins: 250, price: 14.99, bestValue: true, label: "Best Value" },
+  { id: "basic", coins: 15, price: 1.99, label: "save33" },
+  { id: "popular", coins: 40, price: 3.99, popular: true, label: "mostPopular" },
+  { id: "pro", coins: 100, price: 7.99, label: "save47" },
+  { id: "mega", coins: 250, price: 14.99, bestValue: true, label: "bestValue" },
 ];
 
 function PackageCard({
@@ -46,8 +47,16 @@ function PackageCard({
   onPurchase: () => void;
   purchasing: boolean;
 }) {
+  const { t } = useLanguage();
   const pricePerCoin = (pkg.price / pkg.coins).toFixed(2);
   const highlight = pkg.popular || pkg.bestValue;
+  const labelMap: Record<string, string> = {
+    save33: t.save33,
+    mostPopular: t.mostPopular,
+    save47: t.save47,
+    bestValue: t.bestValue,
+  };
+  const translatedLabel = pkg.label ? (labelMap[pkg.label] ?? pkg.label) : undefined;
 
   return (
     <Pressable
@@ -63,7 +72,7 @@ function PackageCard({
       onPress={onPurchase}
       disabled={purchasing}
     >
-      {pkg.label && (
+      {translatedLabel && (
         <View
           style={[
             styles.packageLabel,
@@ -85,7 +94,7 @@ function PackageCard({
               },
             ]}
           >
-            {pkg.label}
+            {translatedLabel}
           </Text>
         </View>
       )}
@@ -98,7 +107,7 @@ function PackageCard({
           </Text>
         </View>
         <Text style={[styles.packagePerCoin, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-          ${pricePerCoin} per coin
+          ${pricePerCoin} {t.perCoin}
         </Text>
       </View>
 
@@ -136,6 +145,7 @@ export default function StoreScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, addCoins } = useCoins();
+  const { t } = useLanguage();
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
@@ -151,8 +161,8 @@ export default function StoreScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     Alert.alert(
-      "Purchase Complete",
-      `You received ${pkg.coins} coins! Your new balance is ${coins + pkg.coins} coins.`,
+      t.purchaseComplete,
+      t.purchaseCompleteMsg(pkg.coins, coins + pkg.coins),
       [{ text: "OK" }]
     );
     setPurchasingId(null);
@@ -178,7 +188,7 @@ export default function StoreScreen() {
         </Pressable>
 
         <Text style={[styles.headerTitle, { color: theme.text, fontFamily: "Inter_700Bold" }]}>
-          Coin Store
+          {t.coinStore}
         </Text>
 
         <View style={[styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40" }]}>
@@ -206,7 +216,7 @@ export default function StoreScreen() {
                 {coins}
               </Text>
               <Text style={[styles.balanceLabel, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                coins remaining
+                {t.coinsRemaining}
               </Text>
             </View>
           </View>
@@ -214,10 +224,10 @@ export default function StoreScreen() {
 
         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
-            COIN PACKAGES
+            {t.coinPackages}
           </Text>
           <Text style={[styles.sectionSub, { color: theme.textMuted, fontFamily: "Inter_400Regular" }]}>
-            Each coin reveals one uploader's full phone number
+            {t.coinPackagesSub}
           </Text>
         </Animated.View>
 
@@ -239,19 +249,19 @@ export default function StoreScreen() {
             <View style={styles.infoRow}>
               <Ionicons name="shield-checkmark-outline" size={18} color={theme.tint} />
               <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                Secure payment processing
+                {t.securePayment}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons name="infinite-outline" size={18} color={theme.tint} />
               <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                Coins never expire
+                {t.coinsNeverExpire}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons name="flash-outline" size={18} color={theme.tint} />
               <Text style={[styles.infoText, { color: theme.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                Instant delivery after purchase
+                {t.instantDelivery}
               </Text>
             </View>
           </View>
