@@ -64,6 +64,13 @@ export const insertProfileSchema = createInsertSchema(profiles).pick({
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Profile = typeof profiles.$inferSelect;
 
+export const removedNumbers = pgTable("removed_numbers", {
+  phone: varchar("phone", { length: 20 }).primaryKey(),
+  removedAt: timestamp("removed_at").defaultNow(),
+});
+
+export type RemovedNumber = typeof removedNumbers.$inferSelect;
+
 export const phoneVerifications = pgTable("phone_verifications", {
   id: serial("id").primaryKey(),
   phone: varchar("phone", { length: 20 }).notNull(),

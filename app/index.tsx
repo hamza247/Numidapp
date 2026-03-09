@@ -30,8 +30,8 @@ import { useCoins, FREE_DAILY_SEARCHES, SEARCH_COST } from "@/lib/coins";
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
 const HISTORY_KEY = "search_history";
-const SYNCED_KEY = "contacts_synced";
 const COUNTRY_KEY = "selected_country";
+const syncedKey = (phone: string) => `contacts_synced_${phone}`;
 
 const defaultCountry = countries[0];
 
@@ -81,13 +81,13 @@ export default function HomeScreen() {
   }, []);
 
   async function loadData() {
-    const [phone, name, historyStr, syncedVal, countryCode] = await Promise.all([
+    const [phone, name, historyStr, countryCode] = await Promise.all([
       AsyncStorage.getItem(PHONE_KEY),
       AsyncStorage.getItem(NAME_KEY),
       AsyncStorage.getItem(HISTORY_KEY),
-      AsyncStorage.getItem(SYNCED_KEY),
       AsyncStorage.getItem(COUNTRY_KEY),
     ]);
+    const syncedVal = phone ? await AsyncStorage.getItem(syncedKey(phone)) : null;
     setUserPhone(phone);
     setUserName(name);
     if (historyStr) {
@@ -377,7 +377,7 @@ export default function HomeScreen() {
         uploaderPhone: userPhone,
         contacts: items,
       });
-      await AsyncStorage.setItem(SYNCED_KEY, "true");
+      if (userPhone) await AsyncStorage.setItem(syncedKey(userPhone), "true");
       setSynced(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Synced!", `${items.length} contacts uploaded successfully.`);
@@ -466,7 +466,6 @@ export default function HomeScreen() {
     await Promise.all([
       AsyncStorage.removeItem(PHONE_KEY),
       AsyncStorage.removeItem(NAME_KEY),
-      AsyncStorage.removeItem(SYNCED_KEY),
     ]);
     setUserPhone(null);
     setUserName(null);

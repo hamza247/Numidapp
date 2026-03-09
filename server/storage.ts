@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { contacts, profiles, phoneVerifications, type InsertContact, type InsertProfile, type Profile } from "../shared/schema";
-import { eq, sql, and, gt } from "drizzle-orm";
+import { contacts, profiles, phoneVerifications, removedNumbers, type InsertContact, type InsertProfile, type Profile } from "../shared/schema";
+import { eq, sql, and, notInArray, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -15,12 +15,26 @@ export async function upsertContacts(items: InsertContact[]): Promise<number> {
     const key = `${item.uploaderPhone}__${item.storedNumber}`;
     seen.set(key, item);
   }
-  const deduped = Array.from(seen.values());
+  let deduped = Array.from(seen.values());
 
-  const batchSize = 100;
+  const allNumbers = [...new Set(deduped.map((i) => i.storedNumber))];
+  const batchSize = 500;
+  const blockedSet = new Set<string>();
+  for (let i = 0; i < allNumbers.length; i += batchSize) {
+    const chunk = allNumbers.slice(i, i + batchSize);
+    const blocked = await db
+      .select({ phone: removedNumbers.phone })
+      .from(removedNumbers)
+      .where(inArray(removedNumbers.phone, chunk));
+    blocked.forEach((r) => blockedSet.add(r.phone));
+  }
+  deduped = deduped.filter((item) => !blockedSet.has(item.storedNumber));
 
-  for (let i = 0; i < deduped.length; i += batchSize) {
-    const batch = deduped.slice(i, i + batchSize);
+  if (deduped.length === 0) return 0;
+
+  const insertBatch = 100;
+  for (let i = 0; i < deduped.length; i += insertBatch) {
+    const batch = deduped.slice(i, i + insertBatch);
     await db
       .insert(contacts)
       .values(batch)
@@ -45,6 +59,12 @@ export async function searchNumber(
 
   const results: Array<{ storedName: string; label: string; uploaderName: string }> = [];
   const seen = new Set<string>();
+
+  const blockedRow = await db
+    .select({ phone: removedNumbers.phone })
+    .from(removedNumbers)
+    .where(inArray(removedNumbers.phone, variants));
+  if (blockedRow.length > 0) return [];
 
   for (const variant of variants) {
     const rows = await db
@@ -184,6 +204,10 @@ export async function deleteProfile(phone: string): Promise<void> {
 
 export async function removePhoneFromContacts(phone: string): Promise<number> {
   const normalized = phone.replace(/\D/g, "");
+  await db
+    .insert(removedNumbers)
+    .values({ phone: normalized })
+    .onConflictDoNothing();
   const result = await db.delete(contacts).where(eq(contacts.storedNumber, normalized));
   return (result as any).rowCount ?? 0;
 }

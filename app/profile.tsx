@@ -25,8 +25,8 @@ import { getApiUrl } from "@/lib/query-client";
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
 const COUNTRY_KEY = "user_country";
-const SYNCED_KEY = "contacts_synced";
 const AVATAR_KEY = "user_avatar";
+const syncedKey = (phone: string) => `contacts_synced_${phone}`;
 const REMOVE_PHONE_COST = 3;
 
 export default function ProfileScreen() {
@@ -133,7 +133,7 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          await AsyncStorage.multiRemove([PHONE_KEY, NAME_KEY, COUNTRY_KEY, SYNCED_KEY]);
+          await AsyncStorage.multiRemove([PHONE_KEY, NAME_KEY, COUNTRY_KEY]);
           router.replace("/");
         },
       },
@@ -157,7 +157,9 @@ export default function ProfileScreen() {
               const url = new URL(`/api/profile?phone=${encodeURIComponent(userPhone)}`, base);
               const res = await fetch(url.toString(), { method: "DELETE" });
               if (res.ok) {
-                await AsyncStorage.multiRemove([PHONE_KEY, NAME_KEY, COUNTRY_KEY, SYNCED_KEY, AVATAR_KEY]);
+                const keysToRemove = [PHONE_KEY, NAME_KEY, COUNTRY_KEY, AVATAR_KEY];
+                if (userPhone) keysToRemove.push(syncedKey(userPhone));
+                await AsyncStorage.multiRemove(keysToRemove);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.replace("/");
               } else {
