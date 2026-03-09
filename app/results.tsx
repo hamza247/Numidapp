@@ -202,11 +202,11 @@ export default function ResultsScreen() {
         </View>
 
         <Pressable
-          style={({ pressed }) => [styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40", opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [styles.coinBadge, { backgroundColor: "#C49A2A" + "20", borderColor: "#C49A2A" + "40", opacity: pressed ? 0.7 : 1 }]}
           onPress={() => router.push("/store")}
         >
-          <Ionicons name="diamond" size={14} color="#FFD700" />
-          <Text style={[styles.coinText, { color: "#FFD700", fontFamily: fonts.bold }]}>
+          <Ionicons name="diamond" size={14} color="#C49A2A" />
+          <Text style={[styles.coinText, { color: "#C49A2A", fontFamily: fonts.bold }]}>
             {coins}
           </Text>
         </Pressable>

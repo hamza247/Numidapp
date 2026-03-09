@@ -80,7 +80,7 @@ function PackageCard({
               backgroundColor: pkg.popular
                 ? theme.tint
                 : pkg.bestValue
-                ? "#FFD700"
+                ? "#C49A2A"
                 : theme.tint + "25",
             },
           ]}
@@ -101,7 +101,7 @@ function PackageCard({
 
       <View style={styles.packageTop}>
         <View style={styles.packageCoinsRow}>
-          <Ionicons name="diamond" size={22} color="#FFD700" />
+          <Ionicons name="diamond" size={22} color="#C49A2A" />
           <Text style={[styles.packageCoinsCount, { color: theme.text, fontFamily: fonts.bold }]}>
             {pkg.coins}
           </Text>
@@ -191,9 +191,9 @@ export default function StoreScreen() {
           {t.coinStore}
         </Text>
 
-        <View style={[styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40" }]}>
-          <Ionicons name="diamond" size={14} color="#FFD700" />
-          <Text style={[styles.coinText, { color: "#FFD700", fontFamily: fonts.bold }]}>
+        <View style={[styles.coinBadge, { backgroundColor: "#C49A2A" + "20", borderColor: "#C49A2A" + "40" }]}>
+          <Ionicons name="diamond" size={14} color="#C49A2A" />
+          <Text style={[styles.coinText, { color: "#C49A2A", fontFamily: fonts.bold }]}>
             {coins}
           </Text>
         </View>
@@ -208,11 +208,11 @@ export default function StoreScreen() {
       >
         <Animated.View entering={FadeInDown.delay(50).duration(400)} style={styles.balanceSection}>
           <View style={[styles.balanceCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <View style={[styles.balanceIconWrap, { backgroundColor: "#FFD700" + "15" }]}>
-              <Ionicons name="diamond" size={32} color="#FFD700" />
+            <View style={[styles.balanceIconWrap, { backgroundColor: "#C49A2A" + "15" }]}>
+              <Ionicons name="diamond" size={32} color="#C49A2A" />
             </View>
             <View style={styles.balanceInfo}>
-              <Text style={[styles.balanceCount, { color: "#FFD700", fontFamily: fonts.bold }]}>
+              <Text style={[styles.balanceCount, { color: "#C49A2A", fontFamily: fonts.bold }]}>
                 {coins}
               </Text>
               <Text style={[styles.balanceLabel, { color: theme.textSecondary, fontFamily: fonts.regular }]}>

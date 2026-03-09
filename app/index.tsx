@@ -496,8 +496,8 @@ export default function HomeScreen() {
           bottomOffset={24}
         >
           <Animated.View style={styles.onboardingContent} entering={FadeInDown.duration(500).springify()}>
-            <View style={[styles.iconRing, { borderColor: "#FFD700" + "40", backgroundColor: "#FFD700" + "15" }]}>
-              <Ionicons name="shield-checkmark-outline" size={48} color="#FFD700" />
+            <View style={[styles.iconRing, { borderColor: "#C49A2A" + "40", backgroundColor: "#C49A2A" + "15" }]}>
+              <Ionicons name="shield-checkmark-outline" size={48} color="#C49A2A" />
             </View>
 
             <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: fonts.bold }]}>
@@ -888,11 +888,11 @@ export default function HomeScreen() {
           </View>
           <View style={styles.headerActions}>
             <Pressable
-              style={({ pressed }) => [styles.coinBadge, { backgroundColor: "#FFD700" + "20", borderColor: "#FFD700" + "40", opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.coinBadge, { backgroundColor: "#C49A2A" + "20", borderColor: "#C49A2A" + "40", opacity: pressed ? 0.7 : 1 }]}
               onPress={() => router.push("/store")}
             >
-              <Ionicons name="diamond" size={14} color="#FFD700" />
-              <Text style={[styles.coinText, { color: "#FFD700", fontFamily: fonts.bold }]}>
+              <Ionicons name="diamond" size={14} color="#C49A2A" />
+              <Text style={[styles.coinText, { color: "#C49A2A", fontFamily: fonts.bold }]}>
                 {coins}
               </Text>
             </Pressable>
@@ -935,7 +935,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
           <View style={styles.searchQuotaRow}>
-            <Ionicons name="search-outline" size={12} color={freeSearchesRemaining > 0 ? theme.tint : "#FFD700"} />
+            <Ionicons name="search-outline" size={12} color={freeSearchesRemaining > 0 ? theme.tint : "#C49A2A"} />
             <Text style={[styles.searchQuotaText, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
               {freeSearchesRemaining > 0
                 ? t.freeSearches(freeSearchesRemaining)

@@ -340,7 +340,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
                 <View style={styles.costBadge}>
-                  <Ionicons name="diamond" size={11} color="#FFD700" />
+                  <Ionicons name="diamond" size={11} color="#C49A2A" />
                   <Text style={[styles.costText, { fontFamily: fonts.bold }]}>{REMOVE_PHONE_COST}</Text>
                 </View>
               </Pressable>
@@ -568,12 +568,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#FFD700" + "20",
+    backgroundColor: "#C49A2A" + "20",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
   },
-  costText: { fontSize: 12, color: "#FFD700" },
+  costText: { fontSize: 12, color: "#C49A2A" },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
