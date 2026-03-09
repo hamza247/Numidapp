@@ -6,6 +6,7 @@ import {
   TextInput,
   Pressable,
   ScrollView,
+  Image,
   Platform,
   useColorScheme,
   ActivityIndicator,
@@ -328,7 +329,11 @@ export default function HomeScreen() {
                       performSearch(localDigits, c);
                     }}
                   >
-                    <Text style={styles.historyFlag}>{c.flag}</Text>
+                    <Image
+                      source={{ uri: `https://flagcdn.com/w80/${c.code.toLowerCase()}.png` }}
+                      style={{ width: 36, height: 24, borderRadius: 3 }}
+                      resizeMode="cover"
+                    />
                     <View style={styles.historyInfo}>
                       <Text style={[styles.historyNumber, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
                         {c.dial} {item.phone.replace(c.dial.replace("+", ""), "")}
@@ -459,7 +464,6 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
   },
-  historyFlag: { fontSize: 24 },
   historyInfo: { flex: 1, gap: 2 },
   historyNumber: { fontSize: 16, letterSpacing: 0.3 },
   historyCountry: { fontSize: 12 },
