@@ -42,7 +42,7 @@ interface LangOption {
 
 const LANG_OPTIONS: LangOption[] = [
   { code: "en", label: "English", native: "English", flag: "🇺🇸" },
-  { code: "ar", label: "Arabic", native: "العربية", flag: "🇸🇦" },
+  { code: "ar", label: "Arabic", native: "العربية", flag: "🇲🇦" },
   { code: "fr", label: "French", native: "Français", flag: "🇫🇷" },
 ];
 
