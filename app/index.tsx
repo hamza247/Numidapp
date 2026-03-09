@@ -1054,7 +1054,7 @@ export default function HomeScreen() {
 
       <Pressable
         style={[styles.resetBtn, { bottom: insets.bottom + 16 + webBottom }]}
-        onPress={resetAccount}
+        onPress={() => router.push("/profile")}
         hitSlop={12}
       >
         <Feather name="settings" size={16} color={theme.textMuted} />
