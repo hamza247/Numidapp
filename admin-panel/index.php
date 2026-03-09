@@ -125,6 +125,13 @@ switch (true) {
         }
         include __DIR__ . '/pages/stripe.php';
         break;
+    case $uri === '/admin/twilio':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            include __DIR__ . '/pages/twilio-action.php';
+            exit;
+        }
+        include __DIR__ . '/pages/twilio.php';
+        break;
     case $uri === '/admin/admob':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             include __DIR__ . '/pages/admob-action.php';
