@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
+import nodemailer from "nodemailer";
 import { pool, upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified, getCoins, updateCoins, setCoinsExact } from "./storage";
 import { z } from "zod";
 
@@ -364,6 +365,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Set coins error:", err);
       return res.status(500).json({ error: "Server error" });
     }
+  });
+
+  app.post("/api/contact", async (req: Request, res: Response) => {
+    const { senderEmail, message } = req.body;
+    if (!senderEmail || !message || typeof senderEmail !== "string" || typeof message !== "string") {
+      return res.status(400).json({ error: "senderEmail and message are required" });
+    }
+    if (message.trim().length < 5) {
+      return res.status(400).json({ error: "Message too short" });
+    }
+
+    try {
+      await pool.query(
+        "INSERT INTO contact_messages (sender_email, message) VALUES ($1, $2)",
+        [senderEmail.trim(), message.trim()]
+      );
+    } catch (err) {
+      console.error("Failed to store contact message:", err);
+    }
+
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const toEmail = "hamzamassaoui@gmail.com";
+
+    if (smtpUser && smtpPass) {
+      try {
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: { user: smtpUser, pass: smtpPass },
+        });
+        await transporter.sendMail({
+          from: `"Who Saved Me" <${smtpUser}>`,
+          to: toEmail,
+          subject: `Contact message from ${senderEmail}`,
+          text: `From: ${senderEmail}\n\n${message}`,
+          html: `<p><strong>From:</strong> ${senderEmail}</p><p>${message.replace(/\n/g, "<br>")}</p>`,
+        });
+        console.log(`[contact] Email sent from ${senderEmail}`);
+      } catch (err) {
+        console.error("[contact] Email send failed:", err);
+      }
+    } else {
+      console.log(`[contact] No SMTP config — message stored in DB. From: ${senderEmail}\n${message}`);
+    }
+
+    return res.json({ ok: true });
   });
 
   const httpServer = createServer(app);
