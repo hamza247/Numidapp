@@ -11,8 +11,6 @@ import {
   Image,
   Platform,
   Modal,
-  TextInput,
-  KeyboardAvoidingView,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -63,10 +61,6 @@ export default function ProfileScreen() {
   const [deleting, setDeleting] = useState(false);
   const [numberRemoved, setNumberRemoved] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactMessage, setContactMessage] = useState("");
-  const [contactSending, setContactSending] = useState(false);
-  const [contactSent, setContactSent] = useState(false);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
@@ -246,31 +240,6 @@ export default function ProfileScreen() {
     setLanguage(lang);
   }
 
-  async function handleContact() {
-    if (!contactEmail.trim() || !contactMessage.trim()) return;
-    setContactSending(true);
-    try {
-      const base = getApiUrl();
-      const res = await fetch(new URL("/api/contact", base).toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senderEmail: contactEmail.trim(), message: contactMessage.trim() }),
-      });
-      if (res.ok) {
-        setContactSent(true);
-        setContactEmail("");
-        setContactMessage("");
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else {
-        Alert.alert("Error", t.contactFailed);
-      }
-    } catch {
-      Alert.alert("Error", t.contactFailed);
-    } finally {
-      setContactSending(false);
-    }
-  }
-
   const initials = userName
     ? userName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "?";
@@ -422,54 +391,16 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.contactUs}</Text>
 
           <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            {contactSent ? (
-              <View style={styles.contactSuccessRow}>
-                <Ionicons name="checkmark-circle" size={22} color={theme.tint} />
-                <Text style={[styles.contactSuccessText, { color: theme.tint, fontFamily: fonts.medium, textAlign }]}>
-                  {t.contactSent}
-                </Text>
+            <Pressable
+              style={({ pressed }) => [styles.row, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => router.push("/contact")}
+            >
+              <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
+                <Ionicons name="mail-outline" size={20} color={theme.tint} />
               </View>
-            ) : (
-              <View style={styles.contactForm}>
-                <TextInput
-                  style={[styles.contactInput, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border, fontFamily: fonts.regular, textAlign }]}
-                  placeholder={t.contactEmail}
-                  placeholderTextColor={theme.textMuted}
-                  value={contactEmail}
-                  onChangeText={(v) => setContactEmail(v)}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={!contactSending}
-                />
-                <TextInput
-                  style={[styles.contactTextArea, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border, fontFamily: fonts.regular, textAlign }]}
-                  placeholder={t.contactMessage}
-                  placeholderTextColor={theme.textMuted}
-                  value={contactMessage}
-                  onChangeText={(v) => setContactMessage(v)}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  editable={!contactSending}
-                />
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.contactBtn,
-                    { backgroundColor: (!contactEmail.trim() || !contactMessage.trim()) ? theme.textMuted : theme.tint, opacity: pressed ? 0.85 : 1 },
-                  ]}
-                  onPress={handleContact}
-                  disabled={contactSending || !contactEmail.trim() || !contactMessage.trim()}
-                >
-                  {contactSending ? (
-                    <ActivityIndicator size="small" color="#000" />
-                  ) : (
-                    <Text style={[styles.contactBtnText, { fontFamily: fonts.semiBold }]}>
-                      {t.contactSend}
-                    </Text>
-                  )}
-                </Pressable>
-              </View>
-            )}
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.contactUs}</Text>
+              <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
+            </Pressable>
           </View>
         </Animated.View>
 
@@ -692,42 +623,4 @@ const styles = StyleSheet.create({
   langNative: { fontSize: 16 },
   langEnglish: { fontSize: 12, marginTop: 1 },
   langDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
-  contactForm: { padding: 16, gap: 12 },
-  contactInput: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 15,
-  },
-  contactTextArea: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 15,
-    minHeight: 100,
-  },
-  contactBtn: {
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-  },
-  contactBtnText: {
-    fontSize: 16,
-    color: "#000",
-  },
-  contactSuccessRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 18,
-  },
-  contactSuccessText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-  },
 });
