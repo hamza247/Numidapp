@@ -1,5 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
@@ -236,6 +237,26 @@ function setupErrorHandler(app: express.Application) {
   setupCors(app);
   setupBodyParsing(app);
   setupRequestLogging(app);
+
+  // Proxy /admin/* to the Laravel admin panel (dev only)
+  if (process.env.NODE_ENV !== "production") {
+    app.use(
+      createProxyMiddleware({
+        pathFilter: "/admin",
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        on: {
+          error: (_err, _req, res) => {
+            (res as Response)
+              .status(503)
+              .send(
+                "<h2>Admin panel is not running</h2><p>Start the Admin Panel workflow in Replit.</p>",
+              );
+          },
+        },
+      }),
+    );
+  }
 
   configureExpoAndLanding(app);
 
