@@ -228,6 +228,15 @@ export async function deleteProfile(phone: string): Promise<void> {
   await db.delete(phoneVerifications).where(eq(phoneVerifications.phone, phone));
 }
 
+export function generateReferralCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
 export async function removePhoneFromContacts(phone: string): Promise<number> {
   const normalized = phone.replace(/\D/g, "");
   await db

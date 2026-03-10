@@ -30,7 +30,7 @@ if ($action === 'reset_coins') {
 }
 
 if ($action === 'save_app_config') {
-    $fields = ['free_daily_searches', 'search_cost', 'reveal_cost', 'initial_coins', 'remove_phone_cost'];
+    $fields = ['free_daily_searches', 'search_cost', 'reveal_cost', 'initial_coins', 'remove_phone_cost', 'referral_reward_coins'];
     foreach ($fields as $f) {
         if (isset($_POST[$f])) {
             setSetting($db, $f, (string)(int)$_POST[$f]);

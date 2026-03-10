@@ -13,6 +13,7 @@ interface AppConfig {
   revealCost: number;
   initialCoins: number;
   removePhoneCost: number;
+  referralRewardCoins: number;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -21,6 +22,7 @@ const DEFAULT_CONFIG: AppConfig = {
   revealCost: 1,
   initialCoins: 5,
   removePhoneCost: 3,
+  referralRewardCoins: 7,
 };
 
 interface CoinsContextValue {
@@ -82,6 +84,7 @@ async function fetchAppConfig(): Promise<AppConfig> {
       revealCost: typeof data.revealCost === "number" ? data.revealCost : DEFAULT_CONFIG.revealCost,
       initialCoins: typeof data.initialCoins === "number" ? data.initialCoins : DEFAULT_CONFIG.initialCoins,
       removePhoneCost: typeof data.removePhoneCost === "number" ? data.removePhoneCost : DEFAULT_CONFIG.removePhoneCost,
+      referralRewardCoins: typeof data.referralRewardCoins === "number" ? data.referralRewardCoins : DEFAULT_CONFIG.referralRewardCoins,
     };
   } catch {
     return DEFAULT_CONFIG;

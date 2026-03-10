@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import nodemailer from "nodemailer";
 import Stripe from "stripe";
-import { pool, upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified, getCoins, updateCoins, setCoinsExact } from "./storage";
+import { pool, upsertContacts, searchNumber, createProfile, createProfileWithPassword, loginWithPassword, setProfilePassword, getProfileByPhone, deleteProfile, removePhoneFromContacts, createOrReplaceOtp, verifyOtp, isPhoneVerified, getCoins, updateCoins, setCoinsExact, generateReferralCode } from "./storage";
 import { z } from "zod";
 
 async function getStripeSettings(): Promise<Record<string, string>> {
@@ -172,6 +172,7 @@ const registerSchema = z.object({
   fullName: z.string().min(2).max(100).regex(/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/),
   countryCode: z.string().min(1).max(5),
   password: z.string().min(6, "Password must be at least 6 characters").max(100),
+  referralCode: z.string().min(4).max(10).optional(),
 });
 
 const loginSchema = z.object({
@@ -237,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten().fieldErrors });
     }
-    const { phone, fullName, countryCode, password } = parsed.data;
+    const { phone, fullName, countryCode, password, referralCode } = parsed.data;
 
     try {
       const verified = await isPhoneVerified(phone);
@@ -257,6 +258,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const icResult = await pool.query("SELECT value FROM app_settings WHERE key = 'initial_coins'");
       const initialCoins = icResult.rows.length ? parseInt(icResult.rows[0].value, 10) || 5 : 5;
       const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password, initialCoins);
+
+      let generatedCode = generateReferralCode();
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          await pool.query("UPDATE profiles SET referral_code=$1 WHERE phone=$2", [generatedCode, phone]);
+          break;
+        } catch {
+          generatedCode = generateReferralCode();
+        }
+      }
+
+      if (referralCode) {
+        try {
+          const referrerResult = await pool.query(
+            "SELECT phone FROM profiles WHERE UPPER(referral_code)=UPPER($1) AND phone<>$2",
+            [referralCode, phone]
+          );
+          if (referrerResult.rows.length > 0) {
+            const referrerPhone = referrerResult.rows[0].phone;
+            const rewardResult = await pool.query("SELECT value FROM app_settings WHERE key='referral_reward_coins'");
+            const reward = rewardResult.rows.length ? parseInt(rewardResult.rows[0].value, 10) || 7 : 7;
+            await updateCoins(referrerPhone, reward);
+            await pool.query("UPDATE profiles SET referred_by=$1 WHERE phone=$2", [referrerPhone, phone]);
+            console.log(`[Referral] +${reward} coins → ${referrerPhone} (referred ${phone})`);
+          }
+        } catch (refErr) {
+          console.error("[Referral] error processing referral:", refErr);
+        }
+      }
+
       return res.json({ profile: { fullName: profile.fullName, phone: profile.phone, countryCode: profile.countryCode } });
     } catch (err) {
       console.error("Register error:", err);
@@ -532,10 +563,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json({ ok: true });
   });
 
+  app.get("/api/referral/validate/:code", async (req: Request, res: Response) => {
+    const { code } = req.params;
+    try {
+      const result = await pool.query(
+        "SELECT full_name FROM profiles WHERE UPPER(referral_code)=UPPER($1)",
+        [code]
+      );
+      if (result.rows.length > 0) {
+        return res.json({ valid: true, name: result.rows[0].full_name });
+      }
+      return res.json({ valid: false });
+    } catch {
+      return res.json({ valid: false });
+    }
+  });
+
+  app.get("/api/referral/my-code", async (req: Request, res: Response) => {
+    const phone = req.query.phone as string;
+    if (!phone) return res.status(400).json({ error: "phone required" });
+    try {
+      const result = await pool.query(
+        "SELECT referral_code, (SELECT COUNT(*) FROM profiles WHERE referred_by=$1) AS referral_count FROM profiles WHERE phone=$1",
+        [phone]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ error: "Profile not found" });
+      return res.json({
+        referralCode: result.rows[0].referral_code,
+        referralCount: parseInt(result.rows[0].referral_count, 10),
+      });
+    } catch {
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
   app.get("/api/app-config", async (_req: Request, res: Response) => {
     try {
       const result = await pool.query(
-        "SELECT key, value FROM app_settings WHERE key IN ('free_daily_searches','search_cost','reveal_cost','initial_coins','remove_phone_cost')"
+        "SELECT key, value FROM app_settings WHERE key IN ('free_daily_searches','search_cost','reveal_cost','initial_coins','remove_phone_cost','referral_reward_coins')"
       );
       const s: Record<string, number> = {
         freeDailySearches: 5,
@@ -543,6 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         revealCost: 1,
         initialCoins: 5,
         removePhoneCost: 3,
+        referralRewardCoins: 7,
       };
       for (const row of result.rows) {
         const v = parseInt(row.value, 10);
@@ -552,11 +618,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (row.key === "reveal_cost") s.revealCost = v;
           if (row.key === "initial_coins") s.initialCoins = v;
           if (row.key === "remove_phone_cost") s.removePhoneCost = v;
+          if (row.key === "referral_reward_coins") s.referralRewardCoins = v;
         }
       }
       return res.json(s);
     } catch (err) {
-      return res.json({ freeDailySearches: 5, searchCost: 1, revealCost: 1, initialCoins: 5, removePhoneCost: 3 });
+      return res.json({ freeDailySearches: 5, searchCost: 1, revealCost: 1, initialCoins: 5, removePhoneCost: 3, referralRewardCoins: 7 });
     }
   });
 

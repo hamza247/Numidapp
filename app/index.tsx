@@ -87,6 +87,7 @@ export default function HomeScreen() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -263,7 +264,7 @@ export default function HomeScreen() {
       const res = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: pendingPhone, fullName: onboardingName.trim(), countryCode: selectedCountry.code, password: pw }),
+        body: JSON.stringify({ phone: pendingPhone, fullName: onboardingName.trim(), countryCode: selectedCountry.code, password: pw, referralCode: referralCode.trim() || undefined }),
         credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
@@ -686,6 +687,25 @@ export default function HomeScreen() {
               {confirmPasswordError && <Text style={[styles.fieldError, { color: theme.destructive, fontFamily: fonts.regular }]}>{confirmPasswordError}</Text>}
             </View>
 
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary, fontFamily: fonts.semiBold }]}>{t.referralCodeLabel}</Text>
+              <View style={[styles.inputRow, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, height: 52 }]}>
+                <Ionicons name="gift-outline" size={18} color={theme.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.phoneInput, { color: theme.text, fontFamily: fonts.medium }]}
+                  placeholder={t.referralCodePlaceholder}
+                  placeholderTextColor={theme.textMuted}
+                  value={referralCode}
+                  onChangeText={(v) => setReferralCode(v.toUpperCase())}
+                  returnKeyType="done"
+                  onSubmitEditing={createAccountWithPassword}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={10}
+                />
+              </View>
+            </View>
+
             <Pressable
               style={({ pressed }) => [styles.continueBtn, { backgroundColor: theme.tint, opacity: (pressed || savingPassword) ? 0.85 : 1 }]}
               onPress={createAccountWithPassword}
@@ -696,7 +716,7 @@ export default function HomeScreen() {
               )}
             </Pressable>
 
-            <Pressable onPress={() => { setOnboardingStep("verify"); setNewPassword(""); setConfirmPassword(""); }}>
+            <Pressable onPress={() => { setOnboardingStep("verify"); setNewPassword(""); setConfirmPassword(""); setReferralCode(""); }}>
               <Text style={[styles.privacyNote, { color: theme.textMuted, fontFamily: fonts.regular }]}>
                 {t.backToVerification}
               </Text>

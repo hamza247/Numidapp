@@ -65,6 +65,16 @@ export const translations = {
     passwordConfirmRequired: "Please confirm your password",
     passwordMismatch: "Passwords do not match",
     privacyNote: "Your number is never shown to other users",
+    referralCodeLabel: "Referral Code (optional)",
+    referralCodePlaceholder: "Friend's referral code",
+    referralCodeInvalid: "Invalid referral code",
+
+    // Referral
+    referralSection: "Invite Friends",
+    myReferralCode: "My Referral Code",
+    referralShareMsg: "Share your code — earn coins for every friend who joins",
+    referralCopied: "Copied!",
+    referralShareText: (code: string, reward: number) => `Join Who Saved Me! Use my referral code ${code} when signing up to get ${reward} coins. Download at numidapp.com`,
 
     // Main screen
     searchPlaceholder: "Phone number",
@@ -258,6 +268,15 @@ export const translations = {
     passwordConfirmRequired: "أكّد كلمة المرور",
     passwordMismatch: "كلمتا المرور غير متطابقتين",
     privacyNote: "رقمك لن يُعرض لأي مستخدم آخر",
+    referralCodeLabel: "رمز الإحالة (اختياري)",
+    referralCodePlaceholder: "رمز إحالة صديق",
+    referralCodeInvalid: "رمز الإحالة غير صالح",
+
+    referralSection: "دعوة الأصدقاء",
+    myReferralCode: "رمز الإحالة الخاص بي",
+    referralShareMsg: "شارك رمزك — اكسب عملات لكل صديق ينضم",
+    referralCopied: "تم النسخ!",
+    referralShareText: (code: string, reward: number) => `انضم إلى Who Saved Me! استخدم رمز الإحالة ${code} عند التسجيل للحصول على ${reward} عملات. حمّل التطبيق من numidapp.com`,
 
     searchPlaceholder: "رقم الهاتف",
     freeSearches: (n: number) => `${n} بحث مجاني متبقٍ اليوم`,
@@ -442,6 +461,15 @@ export const translations = {
     passwordConfirmRequired: "Confirmez votre mot de passe",
     passwordMismatch: "Les mots de passe ne correspondent pas",
     privacyNote: "Votre numéro n'est jamais montré aux autres utilisateurs",
+    referralCodeLabel: "Code de parrainage (facultatif)",
+    referralCodePlaceholder: "Code de parrainage d'un ami",
+    referralCodeInvalid: "Code de parrainage invalide",
+
+    referralSection: "Inviter des amis",
+    myReferralCode: "Mon code de parrainage",
+    referralShareMsg: "Partagez votre code — gagnez des pièces pour chaque ami qui s'inscrit",
+    referralCopied: "Copié !",
+    referralShareText: (code: string, reward: number) => `Rejoins Who Saved Me ! Utilise mon code de parrainage ${code} lors de l'inscription pour obtenir ${reward} pièces. Télécharge l'app sur numidapp.com`,
 
     searchPlaceholder: "Numéro de téléphone",
     freeSearches: (n: number) => `${n} recherche${n !== 1 ? "s" : ""} gratuite${n !== 1 ? "s" : ""} restante${n !== 1 ? "s" : ""}`,

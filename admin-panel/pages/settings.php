@@ -29,11 +29,12 @@ ob_start();
 </div>
 
 <?php
-$freeDailySearches = getSetting($db, 'free_daily_searches', '5');
-$searchCost        = getSetting($db, 'search_cost', '1');
-$initialCoins      = getSetting($db, 'initial_coins', '5');
-$removePhoneCost   = getSetting($db, 'remove_phone_cost', '3');
-$revealCost        = getSetting($db, 'reveal_cost', '1');
+$freeDailySearches  = getSetting($db, 'free_daily_searches', '5');
+$searchCost         = getSetting($db, 'search_cost', '1');
+$initialCoins       = getSetting($db, 'initial_coins', '5');
+$removePhoneCost    = getSetting($db, 'remove_phone_cost', '3');
+$revealCost         = getSetting($db, 'reveal_cost', '1');
+$referralRewardCoins = getSetting($db, 'referral_reward_coins', '7');
 ?>
 <div class="grid grid-cols-2 gap-4 mb-5">
     <div class="bg-[#0F1623] border border-white/5 rounded-2xl p-5">
@@ -63,6 +64,11 @@ $revealCost        = getSetting($db, 'reveal_cost', '1');
             <div>
                 <label class="block text-xs text-gray-500 mb-1.5">Remove Phone Cost (coins)</label>
                 <input type="number" name="remove_phone_cost" value="<?= htmlspecialchars($removePhoneCost) ?>" min="0" max="100"
+                    class="w-full bg-[#080C14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#00C9D4]/50">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1.5">Referral Reward (coins per referred friend)</label>
+                <input type="number" name="referral_reward_coins" value="<?= htmlspecialchars($referralRewardCoins) ?>" min="0" max="1000"
                     class="w-full bg-[#080C14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#00C9D4]/50">
             </div>
             <button type="submit" class="w-full mt-1 bg-[#00C9D4]/10 text-[#00C9D4] hover:bg-[#00C9D4]/20 rounded-xl py-2.5 text-sm font-medium transition-colors">Save Configuration</button>

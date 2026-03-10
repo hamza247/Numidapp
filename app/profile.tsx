@@ -11,6 +11,7 @@ import {
   Image,
   Platform,
   Modal,
+  Share,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -61,6 +62,9 @@ export default function ProfileScreen() {
   const [deleting, setDeleting] = useState(false);
   const [numberRemoved, setNumberRemoved] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [myReferralCode, setMyReferralCode] = useState<string | null>(null);
+  const [referralCount, setReferralCount] = useState(0);
+  const [sharingReferral, setSharingReferral] = useState(false);
 
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
@@ -93,6 +97,14 @@ export default function ProfileScreen() {
           const data = await statusRes.json();
           setNumberRemoved(!!data.removed);
         }
+        try {
+          const refRes = await fetch(new URL(`/api/referral/my-code?phone=${encodeURIComponent(phone)}`, base).toString());
+          if (refRes.ok) {
+            const refData = await refRes.json();
+            setMyReferralCode(refData.referralCode || null);
+            setReferralCount(refData.referralCount || 0);
+          }
+        } catch {}
       } catch {
         const localAvatar = await AsyncStorage.getItem(AVATAR_KEY);
         if (localAvatar) setAvatarUri(localAvatar);
@@ -240,6 +252,27 @@ export default function ProfileScreen() {
     setLanguage(lang);
   }
 
+  async function handleShareReferral() {
+    if (!myReferralCode) return;
+    setSharingReferral(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const reward = appConfig.referralRewardCoins;
+      const msg = t.referralShareText(myReferralCode, reward);
+      if (Platform.OS === "web") {
+        if (navigator.share) {
+          await navigator.share({ text: msg });
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(myReferralCode);
+          Alert.alert(t.referralCopied, myReferralCode);
+        }
+      } else {
+        await Share.share({ message: msg });
+      }
+    } catch {}
+    setSharingReferral(false);
+  }
+
   const initials = userName
     ? userName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "?";
@@ -369,6 +402,48 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
         </Animated.View>
+
+        {myReferralCode && (
+          <Animated.View entering={FadeInDown.delay(145).duration(400)} style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.referralSection}</Text>
+
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={[styles.row, { flexDirection: rowDir }]}>
+                <View style={[styles.rowIcon, { backgroundColor: "#C49A2A18" }]}>
+                  <Ionicons name="gift-outline" size={20} color="#C49A2A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.myReferralCode}</Text>
+                  <Text style={[{ fontSize: 18, fontFamily: fonts.bold, color: "#C49A2A", textAlign, letterSpacing: 2, marginTop: 2 }]}>{myReferralCode}</Text>
+                  {referralCount > 0 && (
+                    <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular, textAlign, marginTop: 2 }]}>
+                      {referralCount} friend{referralCount !== 1 ? "s" : ""} joined
+                    </Text>
+                  )}
+                </View>
+                <Pressable
+                  onPress={handleShareReferral}
+                  disabled={sharingReferral}
+                  style={({ pressed }) => [{ opacity: pressed || sharingReferral ? 0.7 : 1, backgroundColor: theme.tint + "18", borderRadius: 10, padding: 10 }]}
+                >
+                  {sharingReferral
+                    ? <ActivityIndicator size="small" color={theme.tint} />
+                    : <Ionicons name="share-outline" size={20} color={theme.tint} />
+                  }
+                </Pressable>
+              </View>
+              <View style={[styles.divider, { backgroundColor: theme.border, ...dividerMargin }]} />
+              <View style={[styles.row, { flexDirection: rowDir }]}>
+                <View style={[styles.rowIcon, { backgroundColor: theme.tint + "18" }]}>
+                  <Ionicons name="people-outline" size={20} color={theme.tint} />
+                </View>
+                <Text style={[styles.rowSub, { color: theme.textSecondary, fontFamily: fonts.regular, textAlign, flex: 1 }]}>
+                  {t.referralShareMsg}
+                </Text>
+              </View>
+            </View>
+          </Animated.View>
+        )}
 
         <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.section}>
           <Text style={[styles.sectionLabel, { color: theme.textMuted, fontFamily: fonts.semiBold, textAlign, ...labelMargin }]}>{t.session}</Text>
