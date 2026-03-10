@@ -279,6 +279,10 @@ var PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
     .close-btn{background:#00C9D4;color:#000;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%}
     .close-btn:hover{background:#00b5bf}
   </style>
+  <script>
+    function returnToApp(){window.location.href='whosavedme://payment-complete?status=success';}
+    setTimeout(returnToApp,1500);
+  </script>
 </head>
 <body>
   <div class="card">
@@ -288,9 +292,9 @@ var PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
       </svg>
     </div>
     <h1>Payment Successful!</h1>
-    <p>Your coins have been added to your account. You can close this page and return to the app.</p>
+    <p>Your coins have been added to your account. Returning to the app\u2026</p>
     <div class="badge">\u{1F48E} Coins credited</div>
-    <button class="close-btn" onclick="window.close()">Return to App</button>
+    <button class="close-btn" onclick="returnToApp()">Return to App</button>
   </div>
 </body>
 </html>`;
@@ -320,8 +324,9 @@ var PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
       </svg>
     </div>
     <h1>Payment Cancelled</h1>
-    <p>No charges were made. You can close this page and try again whenever you're ready.</p>
-    <button class="close-btn" onclick="window.close()">Close</button>
+    <p>No charges were made. Returning to the app\u2026</p>
+    <button class="close-btn" onclick="window.location.href='whosavedme://payment-complete?status=cancel'">Return to App</button>
+  <script>setTimeout(()=>{window.location.href='whosavedme://payment-complete?status=cancel';},1500);</script>
   </div>
 </body>
 </html>`;

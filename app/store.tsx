@@ -211,10 +211,7 @@ export default function StoreScreen() {
       if (Platform.OS === "web") {
         window.open(checkoutUrl, "_blank");
       } else {
-        await WebBrowser.openBrowserAsync(checkoutUrl, {
-          dismissButtonStyle: "close",
-          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
-        });
+        await WebBrowser.openAuthSessionAsync(checkoutUrl, "whosavedme://");
         await refreshCoins();
       }
     } catch (err: any) {
