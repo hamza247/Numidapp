@@ -216,6 +216,6 @@ ob_start();
 <?php endif; ?>
 
 <?php
-$pageContent = ob_get_clean();
+$content = ob_get_clean();
 $pageTitle = 'Admin Accounts';
 include __DIR__ . '/../layout.php';
