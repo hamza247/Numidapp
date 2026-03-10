@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -798,9 +799,11 @@ export default function HomeScreen() {
             <Ionicons name="search" size={48} color={theme.tint} />
           </View>
 
-          <Text style={[styles.onboardingTitle, { color: theme.text, fontFamily: fonts.bold }]}>
-            {t.appName}
-          </Text>
+          <Image
+            source={require("@/assets/images/logo.png")}
+            style={{ width: 260, height: 72, marginBottom: 4 }}
+            resizeMode="contain"
+          />
           <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             {t.registerTagline}
           </Text>
@@ -903,12 +906,11 @@ export default function HomeScreen() {
           entering={FadeInDown.duration(400)}
         >
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.bold }]}>
-              {t.appName}
-            </Text>
-            <Text style={[styles.headerSub, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
-              {t.appTagline}
-            </Text>
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={{ width: 190, height: 52 }}
+              resizeMode="contain"
+            />
           </View>
           <View style={styles.headerActions}>
             <Pressable
