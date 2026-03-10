@@ -17,6 +17,15 @@ if ($dbUrl) {
 }
 
 $db->exec("CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(255) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())");
+$db->exec("CREATE TABLE IF NOT EXISTS admin_users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'admin',
+    full_name VARCHAR(100) DEFAULT '',
+    created_at TIMESTAMP DEFAULT NOW(),
+    last_login TIMESTAMP
+)");
 
 function getSetting(PDO $db, string $key, string $default = ''): string {
     $stmt = $db->prepare("SELECT value FROM app_settings WHERE key = :k");
@@ -32,8 +41,8 @@ function setSetting(PDO $db, string $key, string $value): void {
 
 require_once __DIR__ . '/includes/phone-country.php';
 
-$adminUser = getenv('ADMIN_USERNAME') ?: 'admin';
-$adminPass = getenv('ADMIN_PASSWORD') ?: 'admin123';
+$envAdminUser = getenv('ADMIN_USERNAME') ?: 'admin';
+$envAdminPass = getenv('ADMIN_PASSWORD') ?: 'admin123';
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = rtrim($uri, '/') ?: '/admin';
@@ -42,11 +51,35 @@ $publicPages = ['/admin/login'];
 $loggedIn = !empty($_SESSION['admin_logged_in']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uri === '/admin/login') {
-    $u = $_POST['username'] ?? '';
+    $u = trim($_POST['username'] ?? '');
     $p = $_POST['password'] ?? '';
-    if ($u === $adminUser && $p === $adminPass) {
+
+    $adminRow = null;
+    if ($u !== '') {
+        $stmt = $db->prepare("SELECT * FROM admin_users WHERE username = :u LIMIT 1");
+        $stmt->execute(['u' => $u]);
+        $adminRow = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    $authenticated = false;
+    $role = 'admin';
+    $adminId = null;
+
+    if ($adminRow && password_verify($p, $adminRow['password_hash'])) {
+        $authenticated = true;
+        $role = $adminRow['role'];
+        $adminId = $adminRow['id'];
+        $db->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = :id")->execute(['id' => $adminId]);
+    } elseif ($u === $envAdminUser && $p === $envAdminPass) {
+        $authenticated = true;
+        $role = 'super_admin';
+    }
+
+    if ($authenticated) {
         $_SESSION['admin_logged_in'] = true;
         $_SESSION['admin_username'] = $u;
+        $_SESSION['admin_role'] = $role;
+        $_SESSION['admin_id'] = $adminId;
         header('Location: /admin');
         exit;
     }
@@ -63,6 +96,10 @@ if (!$loggedIn && !in_array($uri, $publicPages)) {
     header('Location: /admin/login');
     exit;
 }
+
+$currentAdminRole = $_SESSION['admin_role'] ?? 'admin';
+$isSuperAdmin = $currentAdminRole === 'super_admin';
+$currentAdminId = $_SESSION['admin_id'] ?? null;
 
 $successMsg = $_SESSION['flash_success'] ?? null;
 unset($_SESSION['flash_success']);
@@ -145,6 +182,14 @@ switch (true) {
             exit;
         }
         include __DIR__ . '/pages/settings.php';
+        break;
+    case $uri === '/admin/admins':
+        if (!$isSuperAdmin) { header('Location: /admin'); exit; }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            include __DIR__ . '/pages/admins-action.php';
+            exit;
+        }
+        include __DIR__ . '/pages/admins.php';
         break;
     default:
         header('Location: /admin');
