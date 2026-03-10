@@ -164,11 +164,16 @@ export function CoinsProvider({ children }: { children: ReactNode }) {
     const resolvedPhone = phone !== undefined ? phone : await AsyncStorage.getItem(PHONE_KEY);
     phoneRef.current = resolvedPhone;
     setUserPhone(resolvedPhone);
+
+    const config = await fetchAppConfig();
+    configRef.current = config;
+    setAppConfig(config);
+
     if (resolvedPhone) {
       const serverCoins = await fetchCoinsFromServer(resolvedPhone);
       if (serverCoins !== null) setCoins(serverCoins);
     } else {
-      setCoins(configRef.current.initialCoins);
+      setCoins(config.initialCoins);
     }
   }, []);
 
