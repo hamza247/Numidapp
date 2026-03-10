@@ -801,7 +801,7 @@ export default function HomeScreen() {
 
           <Image
             source={require("@/assets/images/logo.png")}
-            style={{ width: 280, height: 88, marginBottom: 4 }}
+            style={{ width: 280, height: 107, marginBottom: 4 }}
             resizeMode="contain"
           />
           <Text style={[styles.onboardingSubtitle, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
@@ -908,7 +908,7 @@ export default function HomeScreen() {
           <View style={styles.headerLeft}>
             <Image
               source={require("@/assets/images/logo.png")}
-              style={{ width: 210, height: 66 }}
+              style={{ width: 210, height: 80 }}
               resizeMode="contain"
             />
           </View>
