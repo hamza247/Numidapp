@@ -2,19 +2,25 @@ import { fetch } from "expo/fetch";
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
- * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
- * @returns {string} The API base URL
+ * Gets the base URL for the Express API server (e.g., "https://numidapp.com/")
+ * Avoids new URL() to prevent Hermes polyfill issues in native production builds.
  */
 export function getApiUrl(): string {
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
-
+  const host = process.env.EXPO_PUBLIC_DOMAIN;
   if (!host) {
     throw new Error("EXPO_PUBLIC_DOMAIN is not set");
   }
+  const base = host.startsWith("http") ? host : `https://${host}`;
+  return base.endsWith("/") ? base : `${base}/`;
+}
 
-  let url = new URL(`https://${host}`);
-
-  return url.href;
+/**
+ * Join a base URL and a path safely without using new URL().
+ * base always ends with "/", path must NOT start with "/".
+ */
+function joinUrl(base: string, path: string): string {
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  return base + cleanPath;
 }
 
 async function throwIfResNotOk(res: Response) {
@@ -30,9 +36,9 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const baseUrl = getApiUrl();
-  const url = new URL(route, baseUrl);
+  const url = joinUrl(baseUrl, route);
 
-  const res = await fetch(url.toString(), {
+  const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -50,9 +56,9 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const baseUrl = getApiUrl();
-    const url = new URL(queryKey.join("/") as string, baseUrl);
+    const url = joinUrl(baseUrl, queryKey.join("/") as string);
 
-    const res = await fetch(url.toString(), {
+    const res = await fetch(url, {
       credentials: "include",
     });
 

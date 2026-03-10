@@ -178,11 +178,10 @@ function ResultCard({
 }
 
 export default function ResultsScreen() {
-  const { phone, countryCode, localNumber } = useLocalSearchParams<{
-    phone: string;
-    countryCode: string;
-    localNumber: string;
-  }>();
+  const rawParams = useLocalSearchParams();
+  const phone = Array.isArray(rawParams.phone) ? rawParams.phone[0] : (rawParams.phone as string | undefined);
+  const countryCode = Array.isArray(rawParams.countryCode) ? rawParams.countryCode[0] : (rawParams.countryCode as string | undefined);
+  const localNumber = Array.isArray(rawParams.localNumber) ? rawParams.localNumber[0] : (rawParams.localNumber as string | undefined);
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
@@ -208,13 +207,12 @@ export default function ResultsScreen() {
     setError(null);
     try {
       const base = getApiUrl();
-      const url = new URL("/api/contacts/search", base);
-      url.searchParams.set("phone", phoneNumber);
-      const res = await fetch(url.toString(), { credentials: "include" });
+      const url = `${base}api/contacts/search?phone=${encodeURIComponent(phoneNumber)}`;
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error(`${res.status}`);
       const data = (await res.json()) as { results: SearchResult[]; count: number };
-      setResults(data.results);
-      if (data.results.length > 0) {
+      setResults(data.results ?? []);
+      if ((data.results ?? []).length > 0) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (e) {
