@@ -183,6 +183,13 @@ switch (true) {
         }
         include __DIR__ . '/pages/settings.php';
         break;
+    case $uri === '/admin/coin-store':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            include __DIR__ . '/pages/coin-store-action.php';
+            exit;
+        }
+        include __DIR__ . '/pages/coin-store.php';
+        break;
     case $uri === '/admin/admins':
         if (!$isSuperAdmin) { header('Location: /admin'); exit; }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

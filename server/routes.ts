@@ -434,6 +434,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const DEFAULT_COIN_PACKAGES = [
+    { id: "starter",  coins: 5,   price: 0.99,  label: "",            popular: false, bestValue: false, enabled: true },
+    { id: "basic",    coins: 15,  price: 1.99,  label: "save33",      popular: false, bestValue: false, enabled: true },
+    { id: "popular",  coins: 40,  price: 3.99,  label: "mostPopular", popular: true,  bestValue: false, enabled: true },
+    { id: "pro",      coins: 100, price: 7.99,  label: "save47",      popular: false, bestValue: false, enabled: true },
+    { id: "mega",     coins: 250, price: 14.99, label: "bestValue",   popular: false, bestValue: true,  enabled: true },
+  ];
+
+  app.get("/api/coin-packages", async (_req: Request, res: Response) => {
+    try {
+      const result = await pool.query("SELECT value FROM app_settings WHERE key = 'coin_packages'");
+      const raw = result.rows[0]?.value;
+      if (!raw) return res.json(DEFAULT_COIN_PACKAGES.filter(p => p.enabled));
+      const packages = JSON.parse(raw);
+      return res.json(packages.filter((p: any) => p.enabled !== false));
+    } catch (err) {
+      console.error("Coin packages error:", err);
+      return res.json(DEFAULT_COIN_PACKAGES.filter(p => p.enabled));
+    }
+  });
+
   app.get("/api/app-settings", async (_req: Request, res: Response) => {
     try {
       const result = await pool.query("SELECT key, value FROM app_settings WHERE key IN ('maintenance_mode', 'ads_enabled', 'ad_provider', 'custom_banner_url', 'custom_banner_link', 'ad_frequency', 'rewarded_coin_amount', 'stripe_enabled', 'stripe_mode', 'stripe_currency', 'stripe_coin_price', 'stripe_coin_amount')");

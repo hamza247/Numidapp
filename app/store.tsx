@@ -17,6 +17,7 @@ import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { useCoins } from "@/lib/coins";
 import { useLanguage } from "@/lib/i18n";
@@ -154,6 +155,11 @@ export default function StoreScreen() {
   const textAlign = isRTL ? "right" : "left" as const;
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
+  const { data: apiPackages } = useQuery<CoinPackage[]>({
+    queryKey: ["/api/coin-packages"],
+  });
+  const packages = (apiPackages && apiPackages.length > 0) ? apiPackages : PACKAGES;
+
   const webTop = Platform.OS === "web" ? 67 : 0;
   const webBottom = Platform.OS === "web" ? 34 : 0;
 
@@ -282,7 +288,7 @@ export default function StoreScreen() {
         </Animated.View>
 
         <View style={styles.packagesGrid}>
-          {PACKAGES.map((pkg, idx) => (
+          {packages.map((pkg, idx) => (
             <Animated.View key={pkg.id} entering={FadeInDown.delay(150 + idx * 60).duration(400)}>
               <PackageCard
                 pkg={pkg}
