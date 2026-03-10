@@ -236,25 +236,23 @@ function setupErrorHandler(app: express.Application) {
 (async () => {
   setupCors(app);
 
-  // Proxy /admin/* to the PHP admin panel (dev only) — must be before body parsing
-  if (process.env.NODE_ENV !== "production") {
-    app.use(
-      createProxyMiddleware({
-        pathFilter: "/admin",
-        target: "http://localhost:8000",
-        changeOrigin: true,
-        on: {
-          error: (_err, _req, res) => {
-            (res as Response)
-              .status(503)
-              .send(
-                "<h2>Admin panel is not running</h2><p>Start the Admin Panel workflow in Replit.</p>",
-              );
-          },
+  // Proxy /admin/* to the PHP admin panel — must be before body parsing
+  app.use(
+    createProxyMiddleware({
+      pathFilter: "/admin",
+      target: "http://localhost:8000",
+      changeOrigin: true,
+      on: {
+        error: (_err, _req, res) => {
+          (res as Response)
+            .status(503)
+            .send(
+              "<h2>Admin panel is not running</h2><p>Start the Admin Panel workflow in Replit.</p>",
+            );
         },
-      }),
-    );
-  }
+      },
+    }),
+  );
 
   setupBodyParsing(app);
   setupRequestLogging(app);

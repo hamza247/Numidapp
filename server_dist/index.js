@@ -626,6 +626,25 @@ async function registerRoutes(app2) {
       return res.status(500).json({ error: "Server error" });
     }
   });
+  const DEFAULT_COIN_PACKAGES = [
+    { id: "starter", coins: 5, price: 0.99, label: "", popular: false, bestValue: false, enabled: true },
+    { id: "basic", coins: 15, price: 1.99, label: "save33", popular: false, bestValue: false, enabled: true },
+    { id: "popular", coins: 40, price: 3.99, label: "mostPopular", popular: true, bestValue: false, enabled: true },
+    { id: "pro", coins: 100, price: 7.99, label: "save47", popular: false, bestValue: false, enabled: true },
+    { id: "mega", coins: 250, price: 14.99, label: "bestValue", popular: false, bestValue: true, enabled: true }
+  ];
+  app2.get("/api/coin-packages", async (_req, res) => {
+    try {
+      const result = await pool.query("SELECT value FROM app_settings WHERE key = 'coin_packages'");
+      const raw = result.rows[0]?.value;
+      if (!raw) return res.json(DEFAULT_COIN_PACKAGES.filter((p) => p.enabled));
+      const packages = JSON.parse(raw);
+      return res.json(packages.filter((p) => p.enabled !== false));
+    } catch (err) {
+      console.error("Coin packages error:", err);
+      return res.json(DEFAULT_COIN_PACKAGES.filter((p) => p.enabled));
+    }
+  });
   app2.get("/api/app-settings", async (_req, res) => {
     try {
       const result = await pool.query("SELECT key, value FROM app_settings WHERE key IN ('maintenance_mode', 'ads_enabled', 'ad_provider', 'custom_banner_url', 'custom_banner_link', 'ad_frequency', 'rewarded_coin_amount', 'stripe_enabled', 'stripe_mode', 'stripe_currency', 'stripe_coin_price', 'stripe_coin_amount')");
@@ -1001,22 +1020,20 @@ function setupErrorHandler(app2) {
 }
 (async () => {
   setupCors(app);
-  if (process.env.NODE_ENV !== "production") {
-    app.use(
-      createProxyMiddleware({
-        pathFilter: "/admin",
-        target: "http://localhost:8000",
-        changeOrigin: true,
-        on: {
-          error: (_err, _req, res) => {
-            res.status(503).send(
-              "<h2>Admin panel is not running</h2><p>Start the Admin Panel workflow in Replit.</p>"
-            );
-          }
+  app.use(
+    createProxyMiddleware({
+      pathFilter: "/admin",
+      target: "http://localhost:8000",
+      changeOrigin: true,
+      on: {
+        error: (_err, _req, res) => {
+          res.status(503).send(
+            "<h2>Admin panel is not running</h2><p>Start the Admin Panel workflow in Replit.</p>"
+          );
         }
-      })
-    );
-  }
+      }
+    })
+  );
   setupBodyParsing(app);
   setupRequestLogging(app);
   configureExpoAndLanding(app);
