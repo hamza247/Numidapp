@@ -647,15 +647,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
 
   useEffect(() => {
-    AsyncStorage.getItem(LANG_KEY).then((saved) => {
+    (async () => {
+      const saved = await AsyncStorage.getItem(LANG_KEY);
       if (saved === "en" || saved === "ar" || saved === "fr") {
         setLanguageState(saved);
         const shouldBeRTL = saved === "ar";
         if (I18nManager.isRTL !== shouldBeRTL) {
           I18nManager.forceRTL(shouldBeRTL);
+          try {
+            await reloadAppAsync();
+          } catch (e) {
+            console.warn("[i18n] RTL reload failed:", e);
+          }
         }
       }
-    });
+    })();
   }, []);
 
   async function setLanguage(lang: Language) {
