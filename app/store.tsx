@@ -234,10 +234,10 @@ export default function StoreScreen() {
           ]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
+            router.canGoBack() ? router.back() : router.replace("/");
           }}
         >
-          <Ionicons name="arrow-back" size={20} color={theme.text} />
+          <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={20} color={theme.text} />
         </Pressable>
 
         <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.bold }]}>

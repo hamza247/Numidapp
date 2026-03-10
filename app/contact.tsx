@@ -76,7 +76,7 @@ export default function ContactScreen() {
             styles.backBtn,
             { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
           ]}
-          onPress={() => router.back()}
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/")}
         >
           <Ionicons
             name={isRTL ? "chevron-forward" : "chevron-back"}
@@ -112,7 +112,7 @@ export default function ContactScreen() {
               </Text>
               <Pressable
                 style={({ pressed }) => [styles.backToProfileBtn, { backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 }]}
-                onPress={() => router.back()}
+                onPress={() => router.canGoBack() ? router.back() : router.replace("/")}
               >
                 <Text style={[styles.backToProfileText, { fontFamily: fonts.semiBold }]}>
                   {isRTL ? "العودة" : "Go back"}

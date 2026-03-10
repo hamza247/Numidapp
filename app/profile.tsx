@@ -152,7 +152,7 @@ export default function ProfileScreen() {
         t.notEnoughCoinsRemove(REMOVE_PHONE_COST, coins),
         [
           { text: t.cancel, style: "cancel" },
-          { text: t.getCoins, onPress: () => { router.back(); router.push("/store"); } },
+          { text: t.getCoins, onPress: () => { if (router.canGoBack()) router.back(); router.push("/store"); } },
         ]
       );
       return;
@@ -287,7 +287,7 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.headerBar, { paddingTop: insets.top + webTop, backgroundColor: theme.background, borderBottomColor: theme.border, flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={[styles.backBtn, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/")} hitSlop={12} style={[styles.backBtn, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
           <Ionicons name={isRTL ? "chevron-forward" : "chevron-back"} size={24} color={theme.text} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.text, fontFamily: fonts.semiBold }]}>{t.profile}</Text>

@@ -103,7 +103,7 @@ export default function LegalScreen() {
           flexDirection: isRTL ? "row-reverse" : "row",
         },
       ]}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/")} hitSlop={12} style={styles.backBtn}>
           <Ionicons
             name={isRTL ? "chevron-forward" : "chevron-back"}
             size={24}
