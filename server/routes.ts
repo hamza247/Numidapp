@@ -795,6 +795,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.send(PAYMENT_CANCEL_HTML);
   });
 
+  app.get("/api/assets/logo", async (_req: Request, res: Response) => {
+    try {
+      const result = await pool.query(
+        `SELECT value FROM app_settings WHERE key = 'landing_logo_base64' LIMIT 1`
+      );
+      if (result.rows.length > 0 && result.rows[0].value) {
+        const dataUri = result.rows[0].value as string;
+        const matches = dataUri.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          const mimeType = matches[1];
+          const base64Data = matches[2];
+          const buffer = Buffer.from(base64Data, "base64");
+          res.setHeader("Content-Type", mimeType);
+          res.setHeader("Cache-Control", "public, max-age=3600");
+          return res.send(buffer);
+        }
+      }
+    } catch {}
+    const { createReadStream, existsSync } = await import("fs");
+    const { resolve } = await import("path");
+    const fallback = resolve(process.cwd(), "assets", "images", "logo.png");
+    if (existsSync(fallback)) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      return createReadStream(fallback).pipe(res);
+    }
+    res.status(404).end();
+  });
+
+  app.get("/api/assets/favicon", async (_req: Request, res: Response) => {
+    try {
+      const result = await pool.query(
+        `SELECT value FROM app_settings WHERE key = 'landing_favicon_base64' LIMIT 1`
+      );
+      if (result.rows.length > 0 && result.rows[0].value) {
+        const dataUri = result.rows[0].value as string;
+        const matches = dataUri.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          const mimeType = matches[1];
+          const base64Data = matches[2];
+          const buffer = Buffer.from(base64Data, "base64");
+          res.setHeader("Content-Type", mimeType);
+          res.setHeader("Cache-Control", "public, max-age=3600");
+          return res.send(buffer);
+        }
+      }
+    } catch {}
+    const { createReadStream, existsSync } = await import("fs");
+    const { resolve } = await import("path");
+    const fallback = resolve(process.cwd(), "assets", "images", "icon.png");
+    if (existsSync(fallback)) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      return createReadStream(fallback).pipe(res);
+    }
+    res.status(404).end();
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

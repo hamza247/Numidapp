@@ -2,6 +2,7 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
+import { pool } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -132,7 +133,29 @@ function serveExpoManifest(platform: string, res: Response) {
   res.send(manifest);
 }
 
-function serveLandingPage({
+async function getBrandingSettings(): Promise<Record<string, string>> {
+  const keys = [
+    "site_title", "meta_description", "meta_keywords",
+    "og_title", "og_description",
+    "hero_title", "hero_subtitle",
+    "ios_app_url", "android_app_url", "download_note",
+    "footer_email", "footer_copyright", "footer_tagline",
+    "app_name",
+  ];
+  try {
+    const result = await pool.query(
+      `SELECT key, value FROM app_settings WHERE key = ANY($1)`,
+      [keys]
+    );
+    const settings: Record<string, string> = {};
+    for (const row of result.rows) settings[row.key] = row.value;
+    return settings;
+  } catch {
+    return {};
+  }
+}
+
+async function serveLandingPage({
   req,
   res,
   landingPageTemplate,
@@ -153,10 +176,27 @@ function serveLandingPage({
   log(`baseUrl`, baseUrl);
   log(`expsUrl`, expsUrl);
 
+  const branding = await getBrandingSettings();
+  const resolvedAppName = branding.app_name || appName;
+
   const html = landingPageTemplate
     .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
     .replace(/EXPS_URL_PLACEHOLDER/g, expsUrl)
-    .replace(/APP_NAME_PLACEHOLDER/g, appName);
+    .replace(/APP_NAME_PLACEHOLDER/g, resolvedAppName)
+    .replace(/\{\{SITE_TITLE\}\}/g, branding.site_title || "NUMID — Who Saved Me?")
+    .replace(/\{\{META_DESCRIPTION\}\}/g, branding.meta_description || "Discover who has your phone number saved in their contacts. NUMID lets you search any number and find out — privately and securely.")
+    .replace(/\{\{META_KEYWORDS\}\}/g, branding.meta_keywords || "who saved my number, phone number lookup, contact search, NUMID")
+    .replace(/\{\{OG_TITLE\}\}/g, branding.og_title || "NUMID — Who Saved Me?")
+    .replace(/\{\{OG_DESCRIPTION\}\}/g, branding.og_description || "Discover who has your phone number saved in their contacts.")
+    .replace(/\{\{APP_NAME\}\}/g, resolvedAppName)
+    .replace(/\{\{HERO_TITLE\}\}/g, branding.hero_title || 'Find out <span class="accent">who saved</span> your number')
+    .replace(/\{\{HERO_SUBTITLE\}\}/g, branding.hero_subtitle || "NUMID lets you search any phone number and instantly see who has it saved in their contacts — privately, securely, in seconds.")
+    .replace(/\{\{IOS_APP_URL\}\}/g, branding.ios_app_url || "#")
+    .replace(/\{\{ANDROID_APP_URL\}\}/g, branding.android_app_url || "#")
+    .replace(/\{\{DOWNLOAD_NOTE\}\}/g, branding.download_note || "Coming soon to both stores · Currently in beta")
+    .replace(/\{\{FOOTER_EMAIL\}\}/g, branding.footer_email || "hamzamassaoui@gmail.com")
+    .replace(/\{\{FOOTER_COPYRIGHT\}\}/g, branding.footer_copyright || "© 2025 NUMID · Who Saved Me. All rights reserved.")
+    .replace(/\{\{FOOTER_TAGLINE\}\}/g, branding.footer_tagline || "Discover who has your phone number saved in their contacts. Fast, private, and available in English, Arabic, and French.");
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.status(200).send(html);

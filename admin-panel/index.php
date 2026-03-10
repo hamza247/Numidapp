@@ -198,6 +198,13 @@ switch (true) {
         }
         include __DIR__ . '/pages/admins.php';
         break;
+    case $uri === '/admin/branding':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            include __DIR__ . '/pages/branding-action.php';
+            exit;
+        }
+        include __DIR__ . '/pages/branding.php';
+        break;
     default:
         header('Location: /admin');
         exit;
