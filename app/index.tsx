@@ -176,8 +176,8 @@ export default function HomeScreen() {
 
     try {
       const base = getApiUrl();
-      const url = new URL("/api/auth/send-otp", base);
-      const res = await fetch(url.toString(), {
+      const url = `${base}api/auth/send-otp`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: fullNumber }),
@@ -215,8 +215,8 @@ export default function HomeScreen() {
 
     try {
       const base = getApiUrl();
-      const verifyUrl = new URL("/api/auth/verify-otp", base);
-      const verifyRes = await fetch(verifyUrl.toString(), {
+      const verifyUrl = `${base}api/auth/verify-otp`;
+      const verifyRes = await fetch(verifyUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: pendingPhone, code: otpCode }),
@@ -260,8 +260,8 @@ export default function HomeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       const base = getApiUrl();
-      const url = new URL("/api/auth/register", base);
-      const res = await fetch(url.toString(), {
+      const url = `${base}api/auth/register`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: pendingPhone, fullName: onboardingName.trim(), countryCode: selectedCountry.code, password: pw, referralCode: referralCode.trim() || undefined }),
@@ -312,8 +312,8 @@ export default function HomeScreen() {
     const fullNumber = selectedCountry.dial.replace("+", "") + digits;
     try {
       const base = getApiUrl();
-      const url = new URL("/api/auth/login", base);
-      const res = await fetch(url.toString(), {
+      const url = `${base}api/auth/login`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: fullNumber, password: loginPassword }),
@@ -337,8 +337,8 @@ export default function HomeScreen() {
     setSendingOtp(true);
     try {
       const base = getApiUrl();
-      const url = new URL("/api/auth/send-otp", base);
-      const res = await fetch(url.toString(), {
+      const url = `${base}api/auth/send-otp`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: pendingPhone }),

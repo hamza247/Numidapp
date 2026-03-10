@@ -187,7 +187,7 @@ export default function ResultsScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, spendCoin, isRevealed, getRevealedPhone, cacheRevealedPhone } = useCoins();
-  const { t, fonts } = useLanguage();
+  const { t, fonts, isRTL } = useLanguage();
 
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);

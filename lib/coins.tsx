@@ -44,8 +44,8 @@ const CoinsContext = createContext<CoinsContextValue | null>(null);
 async function fetchCoinsFromServer(phone: string): Promise<number | null> {
   try {
     const base = getApiUrl();
-    const url = new URL(`/api/coins?phone=${encodeURIComponent(phone)}`, base);
-    const res = await fetch(url.toString());
+    const url = `${base}api/coins?phone=${encodeURIComponent(phone)}`;
+    const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     return typeof data.coins === "number" ? data.coins : null;
@@ -57,8 +57,8 @@ async function fetchCoinsFromServer(phone: string): Promise<number | null> {
 async function updateCoinsOnServer(phone: string, delta: number): Promise<number | null> {
   try {
     const base = getApiUrl();
-    const url = new URL("/api/coins/update", base);
-    const res = await fetch(url.toString(), {
+    const url = `${base}api/coins/update`;
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, delta }),
@@ -74,8 +74,8 @@ async function updateCoinsOnServer(phone: string, delta: number): Promise<number
 async function fetchAppConfig(): Promise<AppConfig> {
   try {
     const base = getApiUrl();
-    const url = new URL("/api/app-config", base);
-    const res = await fetch(url.toString());
+    const url = `${base}api/app-config`;
+    const res = await fetch(url);
     if (!res.ok) return DEFAULT_CONFIG;
     const data = await res.json();
     return {

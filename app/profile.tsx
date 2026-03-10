@@ -84,8 +84,8 @@ export default function ProfileScreen() {
       try {
         const base = getApiUrl();
         const [profileRes, statusRes] = await Promise.all([
-          fetch(new URL(`/api/profile?phone=${encodeURIComponent(phone)}`, base).toString()),
-          fetch(new URL(`/api/contacts/number/status?phone=${encodeURIComponent(phone)}`, base).toString()),
+          fetch(`${base}api/profile?phone=${encodeURIComponent(phone)}`),
+          fetch(`${base}api/contacts/number/status?phone=${encodeURIComponent(phone)}`),
         ]);
         if (profileRes.ok) {
           const { profile } = await profileRes.json();
@@ -98,7 +98,7 @@ export default function ProfileScreen() {
           setNumberRemoved(!!data.removed);
         }
         try {
-          const refRes = await fetch(new URL(`/api/referral/my-code?phone=${encodeURIComponent(phone)}`, base).toString());
+          const refRes = await fetch(`${base}api/referral/my-code?phone=${encodeURIComponent(phone)}`);
           if (refRes.ok) {
             const refData = await refRes.json();
             setMyReferralCode(refData.referralCode || null);
@@ -134,7 +134,7 @@ export default function ProfileScreen() {
       if (base64 && userPhone) {
         try {
           const apiBase = getApiUrl();
-          await fetch(new URL("/api/profile/avatar", apiBase).toString(), {
+          await fetch(`${apiBase}api/profile/avatar`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone: userPhone, avatarBase64: base64 }),
@@ -169,8 +169,8 @@ export default function ProfileScreen() {
             setRemoving(true);
             try {
               const base = getApiUrl();
-              const url = new URL(`/api/contacts/number?phone=${encodeURIComponent(userPhone)}`, base);
-              const res = await fetch(url.toString(), { method: "DELETE" });
+              const url = `${base}api/contacts/number?phone=${encodeURIComponent(userPhone)}`;
+              const res = await fetch(url, { method: "DELETE" });
               if (res.ok) {
                 await addCoins(-REMOVE_PHONE_COST);
                 if (userPhone) await AsyncStorage.setItem(removedKey(userPhone), "true");
@@ -221,8 +221,8 @@ export default function ProfileScreen() {
             setDeleting(true);
             try {
               const base = getApiUrl();
-              const url = new URL(`/api/profile?phone=${encodeURIComponent(userPhone)}`, base);
-              const res = await fetch(url.toString(), { method: "DELETE" });
+              const url = `${base}api/profile?phone=${encodeURIComponent(userPhone)}`;
+              const res = await fetch(url, { method: "DELETE" });
               if (res.ok) {
                 const keysToRemove = [PHONE_KEY, NAME_KEY, COUNTRY_KEY, AVATAR_KEY];
                 if (userPhone) keysToRemove.push(syncedKey(userPhone));

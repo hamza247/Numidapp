@@ -181,8 +181,8 @@ export default function StoreScreen() {
 
     try {
       const base = getApiUrl();
-      const url = new URL("/api/stripe/create-checkout", base);
-      const res = await fetch(url.toString(), {
+      const url = `${base}api/stripe/create-checkout`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

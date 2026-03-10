@@ -45,7 +45,7 @@ export default function ContactScreen() {
     setSending(true);
     try {
       const base = getApiUrl();
-      const res = await fetch(new URL("/api/contact", base).toString(), {
+      const res = await fetch(`${base}api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ senderEmail: email.trim(), message: message.trim() }),
