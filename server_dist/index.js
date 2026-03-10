@@ -834,8 +834,20 @@ ${message}`);
         const coins = parseInt(session.metadata?.coins || "0", 10);
         if (phone && coins > 0) {
           try {
-            await updateCoins(phone, coins);
-            console.log(`[Stripe] +${coins} coins \u2192 ${phone}`);
+            const already = await pool.query(
+              "SELECT 1 FROM stripe_sessions WHERE session_id=$1",
+              [session.id]
+            );
+            if (already.rowCount === 0) {
+              await pool.query(
+                "INSERT INTO stripe_sessions(session_id,phone,coins) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",
+                [session.id, phone, coins]
+              );
+              await updateCoins(phone, coins);
+              console.log(`[Stripe webhook] +${coins} coins \u2192 ${phone}`);
+            } else {
+              console.log(`[Stripe webhook] session ${session.id} already processed, skipping`);
+            }
           } catch (err) {
             console.error("[Stripe] Failed to credit coins:", err);
           }
@@ -847,7 +859,37 @@ ${message}`);
       return res.status(500).json({ error: "Webhook processing failed" });
     }
   });
-  app2.get("/api/payment/success", (_req, res) => {
+  app2.get("/api/payment/success", async (req, res) => {
+    const sessionId = req.query.session_id;
+    if (sessionId) {
+      try {
+        const settings = await getStripeSettings();
+        const stripe = buildStripeClient(settings);
+        if (stripe) {
+          const session = await stripe.checkout.sessions.retrieve(sessionId);
+          const phone = session.metadata?.phone;
+          const coins = parseInt(session.metadata?.coins || "0", 10);
+          if (phone && coins > 0 && session.payment_status === "paid") {
+            const already = await pool.query(
+              "SELECT 1 FROM stripe_sessions WHERE session_id=$1",
+              [sessionId]
+            );
+            if (already.rowCount === 0) {
+              await pool.query(
+                "INSERT INTO stripe_sessions(session_id,phone,coins) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",
+                [sessionId, phone, coins]
+              );
+              await updateCoins(phone, coins);
+              console.log(`[Stripe success] +${coins} coins \u2192 ${phone}`);
+            } else {
+              console.log(`[Stripe success] session ${sessionId} already processed`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("[Stripe success] error crediting coins:", err);
+      }
+    }
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(PAYMENT_SUCCESS_HTML);
   });
