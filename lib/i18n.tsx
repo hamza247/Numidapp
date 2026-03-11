@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { I18nManager } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Updates from "expo-updates";
 
 export type Language = "en" | "ar" | "fr";
 
@@ -642,6 +643,15 @@ const LanguageContext = createContext<LanguageContextType>({
   fonts: interFonts,
 });
 
+async function reloadApp(): Promise<boolean> {
+  try {
+    await Updates.reloadAsync();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
   const [langLoaded, setLangLoaded] = useState(false);
@@ -651,16 +661,26 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const saved = await AsyncStorage.getItem(LANG_KEY);
       const lang: Language =
         saved === "en" || saved === "ar" || saved === "fr" ? saved : "en";
-      I18nManager.forceRTL(lang === "ar");
+      const shouldBeRTL = lang === "ar";
+      if (I18nManager.isRTL !== shouldBeRTL) {
+        I18nManager.forceRTL(shouldBeRTL);
+        const reloaded = await reloadApp();
+        if (reloaded) return;
+      }
       setLanguageState(lang);
       setLangLoaded(true);
     })();
   }, []);
 
   async function setLanguage(lang: Language) {
+    const newIsRTL = lang === "ar";
+    const directionChanges = newIsRTL !== I18nManager.isRTL;
     await AsyncStorage.setItem(LANG_KEY, lang);
-    I18nManager.forceRTL(lang === "ar");
+    I18nManager.forceRTL(newIsRTL);
     setLanguageState(lang);
+    if (directionChanges) {
+      await reloadApp();
+    }
   }
 
   const isRTL = language === "ar";
