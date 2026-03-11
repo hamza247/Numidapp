@@ -1,0 +1,148 @@
+2026-03-11 03:44:36.79
+4750a033
+User
+[Wed Mar 11 08:44:36 2026] PHP 8.2.23 Development Server (http://0.0.0.0:8000) started
+2026-03-11 03:44:37.80
+4750a033
+User
+To prepare for this change:
+2026-03-11 03:44:37.80
+4750a033
+User
+(Use `node --trace-warnings ...` to show where the warning was created)
+2026-03-11 03:44:37.80
+4750a033
+User
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-03-11 03:44:37.80
+4750a033
+User
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-03-11 03:44:37.80
+4750a033
+User
+(node:24) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/workspace/server_dist/index.js is not specified and it doesn't parse as CommonJS.
+2026-03-11 03:44:37.80
+4750a033
+User
+(node:24) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-03-11 03:44:37.80
+4750a033
+User
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-03-11 03:44:37.80
+4750a033
+User
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-03-11 03:44:37.80
+4750a033
+User
+To eliminate this warning, add "type": "module" to /home/runner/workspace/package.json.
+2026-03-11 03:44:37.80
+4750a033
+User
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-03-11 03:45:37.93
+40239eda
+User
+[Wed Mar 11 08:45:37 2026] PHP 8.2.23 Development Server (http://0.0.0.0:8000) started
+2026-03-11 03:45:38.14
+40239eda
+User
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-03-11 03:45:38.14
+40239eda
+User
+To prepare for this change:
+2026-03-11 03:45:38.14
+40239eda
+User
+(node:25) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/workspace/server_dist/index.js is not specified and it doesn't parse as CommonJS.
+2026-03-11 03:45:38.14
+40239eda
+User
+(Use `node --trace-warnings ...` to show where the warning was created)
+2026-03-11 03:45:38.14
+40239eda
+User
+(node:25) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-03-11 03:45:38.14
+40239eda
+User
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-03-11 03:45:38.14
+40239eda
+User
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-03-11 03:45:38.14
+40239eda
+User
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-03-11 03:45:38.14
+40239eda
+User
+To eliminate this warning, add "type": "module" to /home/runner/workspace/package.json.
+2026-03-11 03:45:38.14
+40239eda
+User
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-03-11 03:56:02.33
+40239eda
+User
+[Wed Mar 11 08:56:02 2026] 127.0.0.1:52778 Accepted
+2026-03-11 03:56:02.57
+40239eda
+User
+[Wed Mar 11 08:56:02 2026] 127.0.0.1:52778 Closing
+2026-03-11 03:56:03.10
+40239eda
+User
+[Wed Mar 11 08:56:03 2026] 127.0.0.1:52784 Accepted
+2026-03-11 03:56:11.65
+40239eda
+User
+[Wed Mar 11 08:56:11 2026] 127.0.0.1:60732 Closing
+2026-03-11 04:11:38.51
+c609fd05
+User
+[Wed Mar 11 09:11:38 2026] PHP 8.2.23 Development Server (http://0.0.0.0:8000) started
+2026-03-11 04:11:39.45
+c609fd05
+User
+(Use `node --trace-warnings ...` to show where the warning was created)
+2026-03-11 04:11:39.45
+c609fd05
+User
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-03-11 04:11:39.45
+c609fd05
+User
+(node:22) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/workspace/server_dist/index.js is not specified and it doesn't parse as CommonJS.
+2026-03-11 04:11:39.45
+c609fd05
+User
+To eliminate this warning, add "type": "module" to /home/runner/workspace/package.json.
+2026-03-11 04:11:39.45
+c609fd05
+User
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-03-11 04:11:39.45
+c609fd05
+User
+To prepare for this change:
+2026-03-11 04:11:39.45
+c609fd05
+User
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-03-11 04:11:39.45
+c609fd05
+User
+(node:22) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-03-11 04:11:39.45
+c609fd05
+User
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-03-11 04:11:39.45
+c609fd05
+User
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
