@@ -10,7 +10,7 @@ export const translations = {
   en: {
     // App
     appName: "Who Saved Me",
-    appTagline: "Discover who has your contact",
+    appTagline: "Discover who has your phone number",
 
     // Auth - Login
     login: "Log In",
@@ -217,7 +217,7 @@ export const translations = {
 
   ar: {
     appName: "من حفظني",
-    appTagline: "اكتشف من يحفظ رقمك",
+    appTagline: "اكتشف من يملك رقم هاتفك",
 
     login: "تسجيل الدخول",
     loginTitle: "مرحباً بعودتك",
@@ -410,7 +410,7 @@ export const translations = {
 
   fr: {
     appName: "Qui m'a enregistré",
-    appTagline: "Découvrez qui a votre contact",
+    appTagline: "Découvrez qui a votre numéro",
 
     login: "Connexion",
     loginTitle: "Bon retour",

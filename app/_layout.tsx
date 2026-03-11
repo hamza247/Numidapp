@@ -9,8 +9,9 @@ import { useFonts as useLocalFonts } from "expo-font";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from "react-native";
+import { SplashIntro } from "@/components/SplashIntro";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -89,41 +90,45 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
   const theme = isDark ? Colors.dark : Colors.light;
+  const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <AppGate>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="results"
-          options={{
-            headerShown: false,
-            presentation: "card",
-          }}
-        />
-        <Stack.Screen
-          name="store"
-          options={{
-            headerShown: false,
-            presentation: "card",
-          }}
-        />
-        <Stack.Screen
-          name="profile"
-          options={{
-            headerShown: false,
-            presentation: "card",
-          }}
-        />
-        <Stack.Screen
-          name="legal"
-          options={{
-            headerShown: false,
-            presentation: "card",
-          }}
-        />
-      </Stack>
-    </AppGate>
+    <View style={{ flex: 1 }}>
+      <AppGate>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="results"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="store"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="profile"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="legal"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+        </Stack>
+      </AppGate>
+      {showSplash && <SplashIntro onDone={() => setShowSplash(false)} />}
+    </View>
   );
 }
 
