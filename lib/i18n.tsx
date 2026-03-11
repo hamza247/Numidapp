@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { I18nManager } from "react-native";
+import { I18nManager, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { reloadAppAsync } from "expo";
 
@@ -654,10 +654,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         const shouldBeRTL = saved === "ar";
         if (I18nManager.isRTL !== shouldBeRTL) {
           I18nManager.forceRTL(shouldBeRTL);
-          try {
-            await reloadAppAsync();
-          } catch (e) {
-            console.warn("[i18n] RTL reload failed:", e);
+          if (Platform.OS !== "web") {
+            try {
+              await reloadAppAsync();
+            } catch (e) {
+              console.warn("[i18n] RTL reload failed:", e);
+            }
           }
         }
       }
