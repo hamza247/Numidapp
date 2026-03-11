@@ -645,24 +645,27 @@ const LanguageContext = createContext<LanguageContextType>({
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
+  const [langLoaded, setLangLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       const saved = await AsyncStorage.getItem(LANG_KEY);
-      if (saved === "en" || saved === "ar" || saved === "fr") {
-        setLanguageState(saved);
-        const shouldBeRTL = saved === "ar";
-        if (I18nManager.isRTL !== shouldBeRTL) {
-          I18nManager.forceRTL(shouldBeRTL);
-          if (Platform.OS !== "web") {
-            try {
-              await reloadAppAsync();
-            } catch (e) {
-              console.warn("[i18n] RTL reload failed:", e);
-            }
+      const lang: Language =
+        saved === "en" || saved === "ar" || saved === "fr" ? saved : "en";
+      const shouldBeRTL = lang === "ar";
+      if (I18nManager.isRTL !== shouldBeRTL) {
+        I18nManager.forceRTL(shouldBeRTL);
+        if (Platform.OS !== "web") {
+          try {
+            await reloadAppAsync();
+            return;
+          } catch (e) {
+            console.warn("[i18n] RTL reload failed:", e);
           }
         }
       }
+      setLanguageState(lang);
+      setLangLoaded(true);
     })();
   }, []);
 
@@ -681,6 +684,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const isRTL = language === "ar";
   const t = translations[language] as Translations;
   const fonts = language === "ar" ? arabicFonts : interFonts;
+
+  if (!langLoaded) return null;
 
   return (
     <LanguageContext.Provider value={{ language, t, setLanguage, isRTL, fonts }}>
