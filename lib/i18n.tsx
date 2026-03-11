@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { I18nManager } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Updates from "expo-updates";
+import { reloadAppAsync } from "expo";
 
 export type Language = "en" | "ar" | "fr";
 
@@ -645,7 +645,7 @@ const LanguageContext = createContext<LanguageContextType>({
 
 async function reloadApp(): Promise<boolean> {
   try {
-    await Updates.reloadAsync();
+    await reloadAppAsync();
     return true;
   } catch {
     return false;
