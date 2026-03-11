@@ -150,7 +150,7 @@ export default function StoreScreen() {
   const theme = isDark ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
   const { coins, refreshCoins } = useCoins();
-  const { t, fonts, isRTL } = useLanguage();
+  const { t, fonts, isRTL, language } = useLanguage();
   const rowDir = isRTL ? "row-reverse" : "row" as const;
   const textAlign = isRTL ? "right" : "left" as const;
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
@@ -190,6 +190,7 @@ export default function StoreScreen() {
           coins: pkg.coins,
           priceInCents: Math.round(pkg.price * 100),
           packageId: pkg.id,
+          lang: language,
         }),
         credentials: "include",
       });

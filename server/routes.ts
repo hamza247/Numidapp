@@ -28,7 +28,7 @@ function buildStripeClient(settings: Record<string, string>): Stripe | null {
 }
 
 const PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -48,6 +48,8 @@ const PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
   <script>
     function returnToApp(){window.location.href='whosavedme://payment-complete?status=success';}
     setTimeout(returnToApp,1500);
+    var T={en:{title:"Payment Successful!",msg:"Your coins have been added to your account. Returning to the app\\u2026",badge:"\\ud83d\\udc8e Coins credited",btn:"Return to App"},ar:{title:"\\u062a\\u0645\\u062a \\u0639\\u0645\\u0644\\u064a\\u0629 \\u0627\\u0644\\u062f\\u0641\\u0639 \\u0628\\u0646\\u062c\\u0627\\u062d!",msg:"\\u062a\\u0645\\u062a \\u0625\\u0636\\u0627\\u0641\\u0629 \\u0627\\u0644\\u0639\\u0645\\u0644\\u0627\\u062a \\u0625\\u0644\\u0649 \\u062d\\u0633\\u0627\\u0628\\u0643. \\u062c\\u0627\\u0631\\u064d \\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642\\u2026",badge:"\\ud83d\\udc8e \\u062a\\u0645 \\u0625\\u0636\\u0627\\u0641\\u0629 \\u0627\\u0644\\u0639\\u0645\\u0644\\u0627\\u062a",btn:"\\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642"},fr:{title:"Paiement r\\u00e9ussi !",msg:"Vos pi\\u00e8ces ont \\u00e9t\\u00e9 ajout\\u00e9es \\u00e0 votre compte. Retour \\u00e0 l\\u2019application\\u2026",badge:"\\ud83d\\udc8e Pi\\u00e8ces cr\\u00e9dit\\u00e9es",btn:"Retour \\u00e0 l\\u2019application"}};
+    document.addEventListener("DOMContentLoaded",function(){var p=new URLSearchParams(window.location.search);var l=p.get("lang")||"en";var s=T[l]||T.en;document.getElementById("t").textContent=s.title;document.getElementById("m").textContent=s.msg;document.getElementById("b").textContent=s.badge;document.getElementById("btn").textContent=s.btn;if(l==="ar"){document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar");}else if(l==="fr"){document.documentElement.setAttribute("lang","fr");}else{document.documentElement.setAttribute("lang","en");}});
   </script>
 </head>
 <body>
@@ -57,16 +59,16 @@ const PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
         <path d="M20 6L9 17l-5-5"/>
       </svg>
     </div>
-    <h1>Payment Successful!</h1>
-    <p>Your coins have been added to your account. Returning to the app…</p>
-    <div class="badge">💎 Coins credited</div>
-    <button class="close-btn" onclick="returnToApp()">Return to App</button>
+    <h1 id="t">Payment Successful!</h1>
+    <p id="m">Your coins have been added to your account. Returning to the app\u2026</p>
+    <div class="badge" id="b">\ud83d\udc8e Coins credited</div>
+    <button class="close-btn" id="btn" onclick="returnToApp()">Return to App</button>
   </div>
 </body>
 </html>`;
 
 const PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -82,6 +84,12 @@ const PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
     .close-btn{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%}
     .close-btn:hover{background:rgba(255,255,255,0.12)}
   </style>
+  <script>
+    function returnToApp(){window.location.href='whosavedme://payment-complete?status=cancel';}
+    setTimeout(returnToApp,1500);
+    var T={en:{title:"Payment Cancelled",msg:"No charges were made. Returning to the app\\u2026",btn:"Return to App"},ar:{title:"\\u062a\\u0645 \\u0625\\u0644\\u063a\\u0627\\u0621 \\u0627\\u0644\\u062f\\u0641\\u0639",msg:"\\u0644\\u0645 \\u064a\\u062a\\u0645 \\u062e\\u0635\\u0645 \\u0623\\u064a \\u0645\\u0628\\u0644\\u063a. \\u062c\\u0627\\u0631\\u064d \\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642\\u2026",btn:"\\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642"},fr:{title:"Paiement annul\\u00e9",msg:"Aucun frais n\\u2019a \\u00e9t\\u00e9 pr\\u00e9lev\\u00e9. Retour \\u00e0 l\\u2019application\\u2026",btn:"Retour \\u00e0 l\\u2019application"}};
+    document.addEventListener("DOMContentLoaded",function(){var p=new URLSearchParams(window.location.search);var l=p.get("lang")||"en";var s=T[l]||T.en;document.getElementById("t").textContent=s.title;document.getElementById("m").textContent=s.msg;document.getElementById("btn").textContent=s.btn;if(l==="ar"){document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar");}else if(l==="fr"){document.documentElement.setAttribute("lang","fr");}else{document.documentElement.setAttribute("lang","en");}});
+  </script>
 </head>
 <body>
   <div class="card">
@@ -90,10 +98,9 @@ const PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
         <path d="M18 6L6 18M6 6l12 12"/>
       </svg>
     </div>
-    <h1>Payment Cancelled</h1>
-    <p>No charges were made. Returning to the app…</p>
-    <button class="close-btn" onclick="window.location.href='whosavedme://payment-complete?status=cancel'">Return to App</button>
-  <script>setTimeout(()=>{window.location.href='whosavedme://payment-complete?status=cancel';},1500);</script>
+    <h1 id="t">Payment Cancelled</h1>
+    <p id="m">No charges were made. Returning to the app\u2026</p>
+    <button class="close-btn" id="btn" onclick="returnToApp()">Return to App</button>
   </div>
 </body>
 </html>`;
@@ -628,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/stripe/create-checkout", async (req: Request, res: Response) => {
-    const { phone, coins, priceInCents, packageId } = req.body;
+    const { phone, coins, priceInCents, packageId, lang } = req.body;
     if (!phone || !coins || !priceInCents || !packageId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -672,8 +679,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         locale,
         allow_promotion_codes: allowPromo,
         billing_address_collection: collectBill ? "required" : "auto",
-        success_url: `${baseUrl}/api/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/api/payment/cancel`,
+        success_url: `${baseUrl}/api/payment/success?session_id={CHECKOUT_SESSION_ID}&lang=${encodeURIComponent(lang || "en")}`,
+        cancel_url: `${baseUrl}/api/payment/cancel?lang=${encodeURIComponent(lang || "en")}`,
         metadata: {
           phone: String(phone),
           coins: coinsStr,
