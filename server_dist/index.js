@@ -967,6 +967,64 @@ ${message}`);
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(PAYMENT_CANCEL_HTML);
   });
+  app2.get("/api/assets/logo", async (_req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT value FROM app_settings WHERE key = 'landing_logo_base64' LIMIT 1`
+      );
+      if (result.rows.length > 0 && result.rows[0].value) {
+        const dataUri = result.rows[0].value;
+        const matches = dataUri.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          const mimeType = matches[1];
+          const base64Data = matches[2];
+          const buffer = Buffer.from(base64Data, "base64");
+          res.setHeader("Content-Type", mimeType);
+          res.setHeader("Cache-Control", "public, max-age=3600");
+          return res.send(buffer);
+        }
+      }
+    } catch {
+    }
+    const { createReadStream, existsSync: existsSync2 } = await import("fs");
+    const { resolve: resolve2 } = await import("path");
+    const fallback = resolve2(process.cwd(), "assets", "images", "logo.png");
+    if (existsSync2(fallback)) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      return createReadStream(fallback).pipe(res);
+    }
+    res.status(404).end();
+  });
+  app2.get("/api/assets/favicon", async (_req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT value FROM app_settings WHERE key = 'landing_favicon_base64' LIMIT 1`
+      );
+      if (result.rows.length > 0 && result.rows[0].value) {
+        const dataUri = result.rows[0].value;
+        const matches = dataUri.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          const mimeType = matches[1];
+          const base64Data = matches[2];
+          const buffer = Buffer.from(base64Data, "base64");
+          res.setHeader("Content-Type", mimeType);
+          res.setHeader("Cache-Control", "public, max-age=3600");
+          return res.send(buffer);
+        }
+      }
+    } catch {
+    }
+    const { createReadStream, existsSync: existsSync2 } = await import("fs");
+    const { resolve: resolve2 } = await import("path");
+    const fallback = resolve2(process.cwd(), "assets", "images", "icon.png");
+    if (existsSync2(fallback)) {
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      return createReadStream(fallback).pipe(res);
+    }
+    res.status(404).end();
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }
@@ -1066,7 +1124,36 @@ function serveExpoManifest(platform, res) {
   const manifest = fs.readFileSync(manifestPath, "utf-8");
   res.send(manifest);
 }
-function serveLandingPage({
+async function getBrandingSettings() {
+  const keys = [
+    "site_title",
+    "meta_description",
+    "meta_keywords",
+    "og_title",
+    "og_description",
+    "hero_title",
+    "hero_subtitle",
+    "ios_app_url",
+    "android_app_url",
+    "download_note",
+    "footer_email",
+    "footer_copyright",
+    "footer_tagline",
+    "app_name"
+  ];
+  try {
+    const result = await pool.query(
+      `SELECT key, value FROM app_settings WHERE key = ANY($1)`,
+      [keys]
+    );
+    const settings = {};
+    for (const row of result.rows) settings[row.key] = row.value;
+    return settings;
+  } catch {
+    return {};
+  }
+}
+async function serveLandingPage({
   req,
   res,
   landingPageTemplate,
@@ -1080,7 +1167,9 @@ function serveLandingPage({
   const expsUrl = `${host}`;
   log(`baseUrl`, baseUrl);
   log(`expsUrl`, expsUrl);
-  const html = landingPageTemplate.replace(/BASE_URL_PLACEHOLDER/g, baseUrl).replace(/EXPS_URL_PLACEHOLDER/g, expsUrl).replace(/APP_NAME_PLACEHOLDER/g, appName);
+  const branding = await getBrandingSettings();
+  const resolvedAppName = branding.app_name || appName;
+  const html = landingPageTemplate.replace(/BASE_URL_PLACEHOLDER/g, baseUrl).replace(/EXPS_URL_PLACEHOLDER/g, expsUrl).replace(/APP_NAME_PLACEHOLDER/g, resolvedAppName).replace(/\{\{SITE_TITLE\}\}/g, branding.site_title || "NUMID \u2014 Who Saved Me?").replace(/\{\{META_DESCRIPTION\}\}/g, branding.meta_description || "Discover who has your phone number saved in their contacts. NUMID lets you search any number and find out \u2014 privately and securely.").replace(/\{\{META_KEYWORDS\}\}/g, branding.meta_keywords || "who saved my number, phone number lookup, contact search, NUMID").replace(/\{\{OG_TITLE\}\}/g, branding.og_title || "NUMID \u2014 Who Saved Me?").replace(/\{\{OG_DESCRIPTION\}\}/g, branding.og_description || "Discover who has your phone number saved in their contacts.").replace(/\{\{APP_NAME\}\}/g, resolvedAppName).replace(/\{\{HERO_TITLE\}\}/g, branding.hero_title || 'Find out <span class="accent">who saved</span> your number').replace(/\{\{HERO_SUBTITLE\}\}/g, branding.hero_subtitle || "NUMID lets you search any phone number and instantly see who has it saved in their contacts \u2014 privately, securely, in seconds.").replace(/\{\{IOS_APP_URL\}\}/g, branding.ios_app_url || "#").replace(/\{\{ANDROID_APP_URL\}\}/g, branding.android_app_url || "#").replace(/\{\{DOWNLOAD_NOTE\}\}/g, branding.download_note || "Coming soon to both stores \xB7 Currently in beta").replace(/\{\{FOOTER_EMAIL\}\}/g, branding.footer_email || "hamzamassaoui@gmail.com").replace(/\{\{FOOTER_COPYRIGHT\}\}/g, branding.footer_copyright || "\xA9 2025 NUMID \xB7 Who Saved Me. All rights reserved.").replace(/\{\{FOOTER_TAGLINE\}\}/g, branding.footer_tagline || "Discover who has your phone number saved in their contacts. Fast, private, and available in English, Arabic, and French.");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.status(200).send(html);
 }
