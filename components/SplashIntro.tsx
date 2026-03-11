@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import { View, Image, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,8 +13,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { useLanguage } from "@/lib/i18n";
 
-const RING_SIZE = 120;
-
 interface Props {
   onDone: () => void;
 }
@@ -22,88 +20,80 @@ interface Props {
 export function SplashIntro({ onDone }: Props) {
   const { t, fonts } = useLanguage();
 
-  const logoScale = useSharedValue(0.35);
+  const logoScale = useSharedValue(0.4);
   const logoOpacity = useSharedValue(0);
 
-  const ring1Scale = useSharedValue(1);
-  const ring1Opacity = useSharedValue(0);
-  const ring2Scale = useSharedValue(1);
-  const ring2Opacity = useSharedValue(0);
+  const glow1Scale = useSharedValue(0.8);
+  const glow1Opacity = useSharedValue(0);
+  const glow2Scale = useSharedValue(0.8);
+  const glow2Opacity = useSharedValue(0);
 
-  const titleOpacity = useSharedValue(0);
-  const titleY = useSharedValue(18);
   const taglineOpacity = useSharedValue(0);
-  const taglineY = useSharedValue(22);
+  const taglineY = useSharedValue(20);
 
   const containerOpacity = useSharedValue(1);
 
   useEffect(() => {
-    logoScale.value = withSpring(1, { damping: 11, stiffness: 75 });
-    logoOpacity.value = withTiming(1, { duration: 550 });
+    logoScale.value = withSpring(1, { damping: 10, stiffness: 70 });
+    logoOpacity.value = withTiming(1, { duration: 600 });
 
-    ring1Scale.value = withDelay(
-      280,
+    glow1Opacity.value = withDelay(
+      200,
       withRepeat(
         withSequence(
-          withTiming(1, { duration: 50 }),
-          withTiming(2.6, { duration: 1500, easing: Easing.out(Easing.quad) })
+          withTiming(0.18, { duration: 900, easing: Easing.inOut(Easing.quad) }),
+          withTiming(0.06, { duration: 900, easing: Easing.inOut(Easing.quad) })
+        ),
+        4,
+        true
+      )
+    );
+    glow1Scale.value = withDelay(
+      200,
+      withRepeat(
+        withSequence(
+          withTiming(1.1, { duration: 900, easing: Easing.inOut(Easing.quad) }),
+          withTiming(0.95, { duration: 900, easing: Easing.inOut(Easing.quad) })
+        ),
+        4,
+        true
+      )
+    );
+
+    glow2Opacity.value = withDelay(
+      700,
+      withRepeat(
+        withSequence(
+          withTiming(0.1, { duration: 1100, easing: Easing.inOut(Easing.quad) }),
+          withTiming(0.03, { duration: 1100, easing: Easing.inOut(Easing.quad) })
         ),
         3,
-        false
+        true
       )
     );
-    ring1Opacity.value = withDelay(
-      280,
+    glow2Scale.value = withDelay(
+      700,
       withRepeat(
         withSequence(
-          withTiming(0.55, { duration: 50 }),
-          withTiming(0, { duration: 1500 })
+          withTiming(1.25, { duration: 1100, easing: Easing.inOut(Easing.quad) }),
+          withTiming(1.05, { duration: 1100, easing: Easing.inOut(Easing.quad) })
         ),
         3,
-        false
+        true
       )
     );
 
-    ring2Scale.value = withDelay(
-      980,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 50 }),
-          withTiming(2.6, { duration: 1500, easing: Easing.out(Easing.quad) })
-        ),
-        2,
-        false
-      )
-    );
-    ring2Opacity.value = withDelay(
-      980,
-      withRepeat(
-        withSequence(
-          withTiming(0.35, { duration: 50 }),
-          withTiming(0, { duration: 1500 })
-        ),
-        2,
-        false
-      )
-    );
-
-    titleOpacity.value = withDelay(480, withTiming(1, { duration: 520 }));
-    titleY.value = withDelay(
-      480,
-      withTiming(0, { duration: 520, easing: Easing.out(Easing.quad) })
-    );
-
-    taglineOpacity.value = withDelay(720, withTiming(1, { duration: 600 }));
+    taglineOpacity.value = withDelay(650, withTiming(1, { duration: 600 }));
     taglineY.value = withDelay(
-      720,
+      650,
       withTiming(0, { duration: 600, easing: Easing.out(Easing.quad) })
     );
 
     const exitTimer = setTimeout(() => {
-      containerOpacity.value = withTiming(0, { duration: 520 }, (done) => {
+      containerOpacity.value = withTiming(0, { duration: 500 }, (done) => {
         if (done) runOnJS(onDone)();
       });
-    }, 2800);
+    }, 2900);
 
     return () => clearTimeout(exitTimer);
   }, []);
@@ -117,19 +107,14 @@ export function SplashIntro({ onDone }: Props) {
     opacity: logoOpacity.value,
   }));
 
-  const ring1Style = useAnimatedStyle(() => ({
-    transform: [{ scale: ring1Scale.value }],
-    opacity: ring1Opacity.value,
+  const glow1Style = useAnimatedStyle(() => ({
+    transform: [{ scale: glow1Scale.value }],
+    opacity: glow1Opacity.value,
   }));
 
-  const ring2Style = useAnimatedStyle(() => ({
-    transform: [{ scale: ring2Scale.value }],
-    opacity: ring2Opacity.value,
-  }));
-
-  const titleStyle = useAnimatedStyle(() => ({
-    opacity: titleOpacity.value,
-    transform: [{ translateY: titleY.value }],
+  const glow2Style = useAnimatedStyle(() => ({
+    transform: [{ scale: glow2Scale.value }],
+    opacity: glow2Opacity.value,
   }));
 
   const taglineStyle = useAnimatedStyle(() => ({
@@ -139,25 +124,28 @@ export function SplashIntro({ onDone }: Props) {
 
   return (
     <Animated.View style={[styles.container, containerStyle]}>
-      <View style={styles.logoArea}>
-        <Animated.View style={[styles.ring, ring1Style]} />
-        <Animated.View style={[styles.ring, ring2Style]} />
+      <View style={styles.center}>
+        <Animated.View style={[styles.glow2, glow2Style]} />
+        <Animated.View style={[styles.glow1, glow1Style]} />
+
         <Animated.View style={logoStyle}>
           <Image
-            source={require("../assets/images/logo.png")}
+            source={require("../assets/images/logo-numid.png")}
             style={styles.logo}
             resizeMode="contain"
           />
         </Animated.View>
+
+        <Animated.Text
+          style={[
+            styles.tagline,
+            { fontFamily: fonts.medium },
+            taglineStyle,
+          ]}
+        >
+          {t.appTagline}
+        </Animated.Text>
       </View>
-
-      <Animated.Text style={[styles.title, { fontFamily: fonts.bold }, titleStyle]}>
-        NUMID
-      </Animated.Text>
-
-      <Animated.Text style={[styles.tagline, { fontFamily: fonts.medium }, taglineStyle]}>
-        {t.appTagline}
-      </Animated.Text>
     </Animated.View>
   );
 }
@@ -169,39 +157,37 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#080C14",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
   },
-  logoArea: {
-    width: RING_SIZE,
-    height: RING_SIZE,
+  center: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
   },
-  ring: {
+  glow1: {
     position: "absolute",
-    width: RING_SIZE,
-    height: RING_SIZE,
-    borderRadius: RING_SIZE / 2,
-    borderWidth: 1.5,
-    borderColor: "#00C9D4",
+    width: 320,
+    height: 200,
+    borderRadius: 160,
+    backgroundColor: "#00C9D4",
+  },
+  glow2: {
+    position: "absolute",
+    width: 420,
+    height: 280,
+    borderRadius: 210,
+    backgroundColor: "#0066FF",
   },
   logo: {
-    width: 96,
-    height: 96,
-  },
-  title: {
-    fontSize: 28,
-    color: "#00C9D4",
-    letterSpacing: 6,
-    marginBottom: 14,
+    width: 300,
+    height: 110,
   },
   tagline: {
+    marginTop: 20,
     fontSize: 15,
-    color: "#6B7FA3",
+    color: "#475569",
     textAlign: "center",
     paddingHorizontal: 40,
     lineHeight: 22,
