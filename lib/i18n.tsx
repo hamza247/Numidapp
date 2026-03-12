@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { I18nManager } from "react-native";
+import { I18nManager, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { reloadAppAsync } from "expo";
 
@@ -662,7 +662,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const lang: Language =
         saved === "en" || saved === "ar" || saved === "fr" ? saved : "en";
       const shouldBeRTL = lang === "ar";
-      if (I18nManager.isRTL !== shouldBeRTL) {
+      if (Platform.OS !== "web" && I18nManager.isRTL !== shouldBeRTL) {
         I18nManager.forceRTL(shouldBeRTL);
         const reloaded = await reloadApp();
         if (reloaded) return;
@@ -676,10 +676,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const newIsRTL = lang === "ar";
     const directionChanges = newIsRTL !== I18nManager.isRTL;
     await AsyncStorage.setItem(LANG_KEY, lang);
-    I18nManager.forceRTL(newIsRTL);
     setLanguageState(lang);
-    if (directionChanges) {
-      await reloadApp();
+    if (Platform.OS !== "web") {
+      I18nManager.forceRTL(newIsRTL);
+      if (directionChanges) {
+        await reloadApp();
+      }
     }
   }
 
