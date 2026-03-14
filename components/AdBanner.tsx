@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import {
   View,
   Image,
@@ -8,21 +8,31 @@ import {
   StyleSheet,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { getSearchCount, shouldShowAd } from "@/lib/ads";
+import { getSearchCount, subscribeSearchCount, shouldShowAd } from "@/lib/ads";
 
-let BannerAd: any = null;
-let BannerAdSize: any = null;
-let TestIds: any = null;
-let admobLoaded = false;
+interface AdMobModule {
+  BannerAd: React.ComponentType<{
+    unitId: string;
+    size: string;
+    onAdFailedToLoad?: () => void;
+  }>;
+  BannerAdSize: { ANCHORED_ADAPTIVE_BANNER: string };
+  TestIds: { BANNER: string };
+}
+
+let admobModule: AdMobModule | null = null;
 
 if (Platform.OS !== "web") {
   try {
-    const admob = require("react-native-google-mobile-ads");
-    BannerAd = admob.BannerAd;
-    BannerAdSize = admob.BannerAdSize;
-    TestIds = admob.TestIds;
-    admobLoaded = true;
+    const loaded = require("react-native-google-mobile-ads") as AdMobModule;
+    if (loaded?.BannerAd && loaded?.BannerAdSize && loaded?.TestIds) {
+      admobModule = loaded;
+    }
   } catch {}
+}
+
+function useSearchCount(): number {
+  return useSyncExternalStore(subscribeSearchCount, getSearchCount, getSearchCount);
 }
 
 export default function AdBanner() {
@@ -31,16 +41,7 @@ export default function AdBanner() {
   });
 
   const [admobFailed, setAdmobFailed] = useState(false);
-  const [searchCount, setSearchCount] = useState(getSearchCount());
-  const adConsumedRef = useRef(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const current = getSearchCount();
-      if (current !== searchCount) setSearchCount(current);
-    }, 500);
-    return () => clearInterval(interval);
-  }, [searchCount]);
+  const searchCount = useSearchCount();
 
   if (!settings) return null;
   if (settings.ads_enabled !== "1") return null;
@@ -51,12 +52,12 @@ export default function AdBanner() {
   const customLink = settings.custom_banner_link;
 
   const wantsAdmob = provider === "admob";
-  const canUseAdmob = wantsAdmob && admobLoaded && !admobFailed && Platform.OS !== "web";
+  const canUseAdmob = wantsAdmob && admobModule !== null && !admobFailed && Platform.OS !== "web";
 
   const hasAdmobUnitId = canUseAdmob && (
     Platform.OS === "ios"
-      ? !!(settings.admob_banner_ios || TestIds?.BANNER)
-      : !!(settings.admob_banner_android || TestIds?.BANNER)
+      ? !!(settings.admob_banner_ios || admobModule?.TestIds.BANNER)
+      : !!(settings.admob_banner_android || admobModule?.TestIds.BANNER)
   );
   const hasCustom = !!customUrl;
 
@@ -65,17 +66,17 @@ export default function AdBanner() {
 
   if (!shouldShowAd(frequency, searchCount)) return null;
 
-  if (hasAdmobUnitId) {
+  if (hasAdmobUnitId && admobModule) {
     const unitId =
       Platform.OS === "ios"
-        ? settings.admob_banner_ios || TestIds?.BANNER
-        : settings.admob_banner_android || TestIds?.BANNER;
+        ? settings.admob_banner_ios || admobModule.TestIds.BANNER
+        : settings.admob_banner_android || admobModule.TestIds.BANNER;
 
     return (
       <View style={styles.container}>
-        <BannerAd
+        <admobModule.BannerAd
           unitId={unitId}
-          size={BannerAdSize?.ANCHORED_ADAPTIVE_BANNER || "BANNER"}
+          size={admobModule.BannerAdSize.ANCHORED_ADAPTIVE_BANNER || "BANNER"}
           onAdFailedToLoad={() => setAdmobFailed(true)}
         />
       </View>

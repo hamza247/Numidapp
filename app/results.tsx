@@ -292,6 +292,7 @@ export default function ResultsScreen() {
           >
             <Text style={[styles.retryText, { fontFamily: fonts.semiBold }]}>{t.tryAgain}</Text>
           </Pressable>
+          <AdBanner />
         </Animated.View>
       )}
 
@@ -306,6 +307,7 @@ export default function ResultsScreen() {
           <Text style={[styles.emptyBody, { color: theme.textSecondary, fontFamily: fonts.regular }]}>
             {t.notSavedBody}
           </Text>
+          <AdBanner />
         </Animated.View>
       )}
 
