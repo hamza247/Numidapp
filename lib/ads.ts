@@ -1,5 +1,4 @@
 let searchCount = 0;
-let adShownThisSession = false;
 const listeners: Array<(count: number) => void> = [];
 
 export function incrementSearchCount(): number {
@@ -31,9 +30,7 @@ export function shouldShowAd(frequency: string, count: number): boolean {
     case "every_5":
       return count % 5 === 0;
     case "once_per_session":
-      if (adShownThisSession) return false;
-      adShownThisSession = true;
-      return true;
+      return count === 1;
     default:
       return true;
   }

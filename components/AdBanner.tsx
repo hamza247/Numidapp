@@ -105,7 +105,7 @@ export default function AdBanner() {
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    width: "100%",
     paddingHorizontal: 20,
     paddingVertical: 8,
   },
