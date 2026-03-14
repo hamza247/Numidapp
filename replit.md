@@ -56,7 +56,8 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 - Ad settings from `/api/app-settings`: `ads_enabled`, `ad_provider`, `custom_banner_url`, `custom_banner_link`, `ad_frequency`, `admob_app_id`, `admob_banner_android`, `admob_banner_ios`
 - Frequency options: `every_search`, `every_2`, `every_5`, `once_per_session`
 - Custom banner: tappable image linking to `custom_banner_link`
-- AdMob: NOT bundled in JS (causes Metro errors); `react-native-google-mobile-ads` is a dependency for EAS builds only, never imported in app code
+- AdMob: guarded require() in AdBanner.tsx with try/catch; works in EAS builds, falls back to custom banner in Expo Go/web
+- AdMob App IDs: configured via `app.config.ts` reading env vars `ADMOB_ANDROID_APP_ID` / `ADMOB_IOS_APP_ID` (falls back to Google test IDs); runtime banner unit IDs from admin settings
 - Banner placement: bottom of index screen (ScrollView), ListFooterComponent in results FlatList
 
 ## Phone Number Handling

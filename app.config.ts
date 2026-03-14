@@ -1,0 +1,30 @@
+import { ExpoConfig, ConfigContext } from "expo/config";
+
+const ADMOB_ANDROID_APP_ID_TEST = "ca-app-pub-3940256099942544~3347511713";
+const ADMOB_IOS_APP_ID_TEST = "ca-app-pub-3940256099942544~1458002511";
+
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const androidAppId =
+    process.env.ADMOB_ANDROID_APP_ID || ADMOB_ANDROID_APP_ID_TEST;
+  const iosAppId =
+    process.env.ADMOB_IOS_APP_ID || ADMOB_IOS_APP_ID_TEST;
+
+  return {
+    ...config,
+    name: "Numidapp",
+    slug: "numidapp",
+    plugins: [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser",
+      "expo-contacts",
+      [
+        "react-native-google-mobile-ads",
+        {
+          androidAppId,
+          iosAppId,
+        },
+      ],
+    ],
+  };
+};
