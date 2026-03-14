@@ -21,6 +21,7 @@ import { fetch } from "expo/fetch";
 import { countries, type Country } from "@/lib/countries";
 import { useCoins } from "@/lib/coins";
 import { useLanguage } from "@/lib/i18n";
+import AdBanner from "@/components/AdBanner";
 
 interface SearchResult {
   storedName: string;
@@ -332,6 +333,7 @@ export default function ResultsScreen() {
               cacheRevealedPhone={cacheRevealedPhone}
             />
           )}
+          ListFooterComponent={<AdBanner />}
           ListHeaderComponent={
             <Animated.View entering={FadeInDown.delay(0).duration(350)}>
               <View style={[styles.statsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>

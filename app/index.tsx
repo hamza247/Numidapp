@@ -28,6 +28,8 @@ import CountryPicker from "@/components/CountryPicker";
 import { countries, type Country } from "@/lib/countries";
 import { useCoins, FREE_DAILY_SEARCHES, SEARCH_COST } from "@/lib/coins";
 import { useLanguage } from "@/lib/i18n";
+import { incrementSearchCount } from "@/lib/ads";
+import AdBanner from "@/components/AdBanner";
 
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
@@ -462,6 +464,8 @@ export default function HomeScreen() {
     const newHistory = [entry, ...history.filter((h) => h.phone !== fullNumber)].slice(0, 10);
     setHistory(newHistory);
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+
+    incrementSearchCount();
 
     router.push({
       pathname: "/results",
@@ -1082,6 +1086,8 @@ export default function HomeScreen() {
             </Text>
           </Animated.View>
         )}
+
+        <AdBanner />
       </ScrollView>
 
       <Pressable

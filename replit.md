@@ -50,6 +50,15 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 - No emojis in UI (flags in CountryPicker are functional)
 - Label colors: Mobile=#4A9EFF, Home=#FF9500, Work=#AF52DE
 
+## Ad Banner System
+- `components/AdBanner.tsx` - Custom banner image component, renders based on admin settings
+- `lib/ads.ts` - Session-scoped search counter and ad frequency logic
+- Ad settings from `/api/app-settings`: `ads_enabled`, `ad_provider`, `custom_banner_url`, `custom_banner_link`, `ad_frequency`, `admob_app_id`, `admob_banner_android`, `admob_banner_ios`
+- Frequency options: `every_search`, `every_2`, `every_5`, `once_per_session`
+- Custom banner: tappable image linking to `custom_banner_link`
+- AdMob: NOT bundled in JS (causes Metro errors); `react-native-google-mobile-ads` is a dependency for EAS builds only, never imported in app code
+- Banner placement: bottom of index screen (ScrollView), ListFooterComponent in results FlatList
+
 ## Phone Number Handling
 - iOS contact labels sanitized: `.replace(/[_$!<>]/g, "")`
 - Variants handled: +1 prefix, 10-digit, 11-digit with/without country code

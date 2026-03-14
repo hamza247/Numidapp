@@ -500,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/app-settings", async (_req: Request, res: Response) => {
     try {
-      const result = await pool.query("SELECT key, value FROM app_settings WHERE key IN ('maintenance_mode', 'ads_enabled', 'ad_provider', 'custom_banner_url', 'custom_banner_link', 'ad_frequency', 'rewarded_coin_amount', 'stripe_enabled', 'stripe_mode', 'stripe_currency', 'stripe_coin_price', 'stripe_coin_amount')");
+      const result = await pool.query("SELECT key, value FROM app_settings WHERE key IN ('maintenance_mode', 'ads_enabled', 'ad_provider', 'custom_banner_url', 'custom_banner_link', 'ad_frequency', 'admob_app_id', 'admob_banner_android', 'admob_banner_ios', 'rewarded_coin_amount', 'stripe_enabled', 'stripe_mode', 'stripe_currency', 'stripe_coin_price', 'stripe_coin_amount')");
       const settings: Record<string, string> = {};
       for (const row of result.rows) {
         settings[row.key] = row.value;
