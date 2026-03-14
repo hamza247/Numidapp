@@ -22,6 +22,7 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
+import FlagImage from "@/components/FlagImage";
 import { apiRequest, getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import CountryPicker from "@/components/CountryPicker";
@@ -1058,7 +1059,7 @@ export default function HomeScreen() {
                       performSearch(localDigits, c);
                     }}
                   >
-                    <Text style={styles.historyFlag}>{c.flag}</Text>
+                    <FlagImage code={c.code} size="md" />
                     <View style={styles.historyInfo}>
                       <Text style={[styles.historyNumber, { color: theme.text, fontFamily: fonts.medium }]}>
                         {c.dial} {item.phone.replace(c.dial.replace("+", ""), "")}

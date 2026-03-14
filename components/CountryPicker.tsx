@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { countries, type Country } from "@/lib/countries";
+import FlagImage from "@/components/FlagImage";
 
 interface CountryPickerProps {
   selected: Country;
@@ -50,7 +51,7 @@ export default function CountryPicker({ selected, onSelect }: CountryPickerProps
         ]}
         onPress={() => setVisible(true)}
       >
-        <Text style={styles.flag}>{selected.flag}</Text>
+        <FlagImage code={selected.code} size="md" />
         <Text style={[styles.dial, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
           {selected.dial}
         </Text>
@@ -112,7 +113,7 @@ export default function CountryPicker({ selected, onSelect }: CountryPickerProps
                       setSearch("");
                     }}
                   >
-                    <Text style={styles.rowFlag}>{item.flag}</Text>
+                    <FlagImage code={item.code} size="lg" />
                     <View style={styles.rowInfo}>
                       <Text style={[styles.rowName, { color: theme.text, fontFamily: "Inter_500Medium" }]}>
                         {item.name}

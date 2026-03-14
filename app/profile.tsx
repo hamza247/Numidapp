@@ -21,6 +21,7 @@ import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import Colors from "@/constants/colors";
+import FlagImage from "@/components/FlagImage";
 import { useCoins } from "@/lib/coins";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
@@ -37,13 +38,13 @@ interface LangOption {
   code: Language;
   label: string;
   native: string;
-  flag: string;
+  countryCode: string;
 }
 
 const LANG_OPTIONS: LangOption[] = [
-  { code: "en", label: "English", native: "English", flag: "🇺🇸" },
-  { code: "ar", label: "Arabic", native: "العربية", flag: "🇲🇦" },
-  { code: "fr", label: "French", native: "Français", flag: "🇫🇷" },
+  { code: "en", label: "English", native: "English", countryCode: "US" },
+  { code: "ar", label: "Arabic", native: "العربية", countryCode: "MA" },
+  { code: "fr", label: "French", native: "Français", countryCode: "FR" },
 ];
 
 export default function ProfileScreen() {
@@ -395,7 +396,7 @@ export default function ProfileScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowLabel, { color: theme.text, fontFamily: fonts.medium, textAlign }]}>{t.language}</Text>
                 <Text style={[styles.rowSub, { color: theme.textMuted, fontFamily: fonts.regular, textAlign }]}>
-                  {currentLang?.flag} {currentLang?.native}
+                  {currentLang?.native}
                 </Text>
               </View>
               <Ionicons name={isRTL ? "chevron-back" : "chevron-forward"} size={18} color={theme.textMuted} />
@@ -570,7 +571,7 @@ export default function ProfileScreen() {
                   style={({ pressed }) => [styles.langRow, { flexDirection: rowDir, opacity: pressed ? 0.7 : 1 }]}
                   onPress={() => handleSelectLanguage(opt.code)}
                 >
-                  <Text style={styles.langFlag}>{opt.flag}</Text>
+                  <FlagImage code={opt.countryCode} size="lg" />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.langNative, { color: theme.text, fontFamily: fonts.semiBold, textAlign }]}>
                       {opt.native}

@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import FlagImage from "@/components/FlagImage";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import { countries, type Country } from "@/lib/countries";
@@ -250,7 +251,7 @@ export default function ResultsScreen() {
 
         <View style={styles.headerCenter}>
           <View style={styles.headerPhoneRow}>
-            <Text style={styles.headerFlag}>{country.flag}</Text>
+            <FlagImage code={country.code} size="md" />
             <Text style={[styles.headerNumber, { color: theme.text, fontFamily: fonts.bold }]}>
               {country.dial} {localNumber ?? phone}
             </Text>
