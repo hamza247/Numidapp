@@ -58,6 +58,8 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 - Custom banner: tappable image linking to `custom_banner_link`
 - AdMob: guarded require() in AdBanner.tsx with try/catch; works in EAS builds, falls back to custom banner in Expo Go/web
 - AdMob App IDs: configured via `app.config.ts` reading env vars `ADMOB_ANDROID_APP_ID` / `ADMOB_IOS_APP_ID` (falls back to Google test IDs); runtime banner unit IDs from admin settings
+- AdMob native module: guarded with top-level try/catch require() — returns null in Expo Go (no native module linked), component falls back to custom banner automatically
+- EAS build flow for AdMob: Admin sets `admob_app_id` in admin panel -> operator sets `ADMOB_ANDROID_APP_ID` / `ADMOB_IOS_APP_ID` as EAS build env vars -> `app.config.ts` injects into plugin config -> EAS build links native AdMob SDK with correct App IDs
 - Banner placement: bottom of index screen (ScrollView), ListFooterComponent in results FlatList
 
 ## Phone Number Handling
