@@ -22,8 +22,8 @@ Mobile app (Expo + Express) that lets users search any phone number to discover 
 - `constants/colors.ts` - Theme colors (dark/light)
 
 ## Admin Panel (Plain PHP)
-- Location: `admin-panel/` served via Express proxy at `/admin`
-- Admin workflow: `cd admin-panel && php -S 0.0.0.0:8000 index.php` on port 8000
+- Location: `admin/` served via Express proxy at `/admin`
+- Admin workflow: `cd admin && php -S 0.0.0.0:8000 index.php` on port 8000
 - Login: `/admin/login` (credentials: `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars, default admin/admin123)
 - Pages: dashboard, users, user-detail, contacts (with export), removed numbers, stripe config, admob config, settings
 - `app_settings` table: key-value store for runtime config (maintenance_mode, stripe_*, ads_*, admob_*)

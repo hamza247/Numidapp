@@ -90,5 +90,5 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd admin-panel && php -S 0.0.0.0:8000 index.php"
+args = "cd admin && php -S 0.0.0.0:8000 index.php"
 waitForPort = 8000
