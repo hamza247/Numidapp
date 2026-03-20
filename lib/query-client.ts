@@ -2,7 +2,7 @@ import { fetch } from "expo/fetch";
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
- * Gets the base URL for the Express API server (e.g., "https://numidapp.com/")
+ * Gets the base URL for the Express API server (e.g., "https://numidapp.co/")
  * Avoids new URL() to prevent Hermes polyfill issues in native production builds.
  */
 export function getApiUrl(): string {

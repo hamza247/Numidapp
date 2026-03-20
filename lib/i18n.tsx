@@ -74,7 +74,7 @@ export const translations = {
     myReferralCode: "My Referral Code",
     referralShareMsg: "Share your code — earn coins for every friend who joins",
     referralCopied: "Copied!",
-    referralShareText: (code: string, reward: number) => `Join Who Saved Me! Use my referral code ${code} when signing up to get ${reward} coins. Download at numidapp.com`,
+    referralShareText: (code: string, reward: number) => `Join Who Saved Me! Use my referral code ${code} when signing up to get ${reward} coins. Download at numidapp.co`,
 
     // Main screen
     searchPlaceholder: "Phone number",
@@ -276,7 +276,7 @@ export const translations = {
     myReferralCode: "رمز الإحالة الخاص بي",
     referralShareMsg: "شارك رمزك — اكسب عملات لكل صديق ينضم",
     referralCopied: "تم النسخ!",
-    referralShareText: (code: string, reward: number) => `انضم إلى Who Saved Me! استخدم رمز الإحالة ${code} عند التسجيل للحصول على ${reward} عملات. حمّل التطبيق من numidapp.com`,
+    referralShareText: (code: string, reward: number) => `انضم إلى Who Saved Me! استخدم رمز الإحالة ${code} عند التسجيل للحصول على ${reward} عملات. حمّل التطبيق من numidapp.co`,
 
     searchPlaceholder: "رقم الهاتف",
     freeSearches: (n: number) => `${n} بحث مجاني متبقٍ اليوم`,
@@ -469,7 +469,7 @@ export const translations = {
     myReferralCode: "Mon code de parrainage",
     referralShareMsg: "Partagez votre code — gagnez des pièces pour chaque ami qui s'inscrit",
     referralCopied: "Copié !",
-    referralShareText: (code: string, reward: number) => `Rejoins Who Saved Me ! Utilise mon code de parrainage ${code} lors de l'inscription pour obtenir ${reward} pièces. Télécharge l'app sur numidapp.com`,
+    referralShareText: (code: string, reward: number) => `Rejoins Who Saved Me ! Utilise mon code de parrainage ${code} lors de l'inscription pour obtenir ${reward} pièces. Télécharge l'app sur numidapp.co`,
 
     searchPlaceholder: "Numéro de téléphone",
     freeSearches: (n: number) => `${n} recherche${n !== 1 ? "s" : ""} gratuite${n !== 1 ? "s" : ""} restante${n !== 1 ? "s" : ""}`,
