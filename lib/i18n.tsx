@@ -102,6 +102,9 @@ export const translations = {
     syncSuccess: (n: number) => `${n} contacts uploaded successfully.`,
     syncFailed: "Sync Failed",
     syncNoContacts: "No phone contacts found.",
+    coin: "coin",
+    coins: "coins",
+    earnedForContacts: "earned for uploading contacts!",
     permissionRequired: "Permission Required",
     permissionMsg: "We need access to your contacts to help others discover who saved their number.",
 
@@ -302,6 +305,9 @@ export const translations = {
     syncSuccess: (n: number) => `تم رفع ${n} جهة اتصال بنجاح.`,
     syncFailed: "فشلت المزامنة",
     syncNoContacts: "لا توجد جهات اتصال هاتفية.",
+    coin: "عملة",
+    coins: "عملات",
+    earnedForContacts: "مكافأة على رفع جهات الاتصال!",
     permissionRequired: "الإذن مطلوب",
     permissionMsg: "نحتاج إلى الوصول إلى جهات اتصالك لمساعدة الآخرين على اكتشاف من حفظ رقمهم.",
 
@@ -495,6 +501,9 @@ export const translations = {
     syncSuccess: (n: number) => `${n} contacts importés avec succès.`,
     syncFailed: "Synchronisation échouée",
     syncNoContacts: "Aucun contact téléphonique trouvé.",
+    coin: "pièce",
+    coins: "pièces",
+    earnedForContacts: "gagnées pour l'importation de contacts !",
     permissionRequired: "Autorisation requise",
     permissionMsg: "Nous avons besoin d'accéder à vos contacts pour aider les autres à découvrir qui a leur numéro.",
 

@@ -402,14 +402,21 @@ export default function HomeScreen() {
     }
 
     try {
-      await apiRequest("POST", "/api/contacts/upload", {
+      const uploadRes = await apiRequest("POST", "/api/contacts/upload", {
         uploaderPhone: userPhone,
         contacts: items,
       });
+      const uploadData = await uploadRes.json().catch(() => ({}));
       if (userPhone) await AsyncStorage.setItem(syncedKey(userPhone), "true");
       setSynced(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("✓", t.syncSuccess(items.length));
+      const coinsEarned: number = typeof uploadData?.coinsEarned === "number" ? uploadData.coinsEarned : 0;
+      if (coinsEarned > 0) {
+        await refreshCoins(userPhone);
+        Alert.alert("✓", `${t.syncSuccess(items.length)}\n\n+${coinsEarned} ${coinsEarned === 1 ? t.coin : t.coins} ${t.earnedForContacts}`);
+      } else {
+        Alert.alert("✓", t.syncSuccess(items.length));
+      }
     } catch (e: any) {
       console.error("Sync error:", e?.message || e);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

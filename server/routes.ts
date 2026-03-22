@@ -262,9 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ profile: { fullName: profile.fullName, phone: profile.phone, countryCode: profile.countryCode } });
       }
 
-      const icResult = await pool.query("SELECT value FROM app_settings WHERE key = 'initial_coins'");
-      const initialCoins = icResult.rows.length ? parseInt(icResult.rows[0].value, 10) || 5 : 5;
-      const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password, initialCoins);
+      const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password, 0);
 
       let generatedCode = generateReferralCode();
       for (let attempt = 0; attempt < 5; attempt++) {
@@ -371,9 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { fullName, phone, countryCode } = parsed.data;
-      const icResult2 = await pool.query("SELECT value FROM app_settings WHERE key = 'initial_coins'");
-      const initialCoins2 = icResult2.rows.length ? parseInt(icResult2.rows[0].value, 10) || 5 : 5;
-      const profile = await createProfile({ fullName, phone, countryCode }, initialCoins2);
+      const profile = await createProfile({ fullName, phone, countryCode }, 0);
       return res.json({ profile });
     } catch (err: any) {
       if (err?.code === "23505") {
@@ -429,9 +425,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         label: c.label,
       })).filter((c) => c.storedNumber.length >= 5);
 
+      const beforeResult = await pool.query(
+        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1",
+        [uploaderPhone]
+      );
+      const beforeCount = parseInt(beforeResult.rows[0].count, 10) || 0;
+
       const count = await upsertContacts(items);
+
+      const afterResult = await pool.query(
+        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1",
+        [uploaderPhone]
+      );
+      const afterCount = parseInt(afterResult.rows[0].count, 10) || 0;
+
+      const coinsEarned = Math.floor(afterCount / 10) - Math.floor(beforeCount / 10);
+      if (coinsEarned > 0) {
+        await updateCoins(uploaderPhone, coinsEarned);
+        console.log(`[Contacts] +${coinsEarned} coins → ${uploaderPhone} (${afterCount} total contacts)`);
+      }
+
       console.log(`Successfully uploaded ${count} contacts`);
-      return res.json({ uploaded: count });
+      return res.json({ uploaded: count, coinsEarned });
     } catch (err) {
       console.error("Upload error:", err);
       return res.status(500).json({ error: "Server error during upload" });
