@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import { contacts, profiles, phoneVerifications, removedNumbers, type InsertContact, type InsertProfile, type Profile } from "../shared/schema";
 import { eq, sql, and, notInArray, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { isValidInternationalPhone } from "./phoneUtils";
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool);
@@ -37,12 +38,16 @@ export async function upsertContacts(items: InsertContact[]): Promise<number> {
     const batch = deduped.slice(i, i + insertBatch);
     await db
       .insert(contacts)
-      .values(batch)
+      .values(batch.map((item) => ({
+        ...item,
+        isValidInternational: isValidInternationalPhone(item.storedNumber),
+      })))
       .onConflictDoUpdate({
         target: [contacts.uploaderPhone, contacts.storedNumber],
         set: {
           storedName: sql`excluded.stored_name`,
           label: sql`excluded.label`,
+          isValidInternational: sql`excluded.is_valid_international`,
           updatedAt: sql`NOW()`,
         },
       });

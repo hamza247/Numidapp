@@ -19,6 +19,7 @@ export const contacts = pgTable(
     storedNumber: varchar("stored_number", { length: 20 }).notNull(),
     storedName: varchar("stored_name", { length: 255 }).notNull(),
     label: varchar("label", { length: 100 }).default("mobile"),
+    isValidInternational: boolean("is_valid_international").default(false),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },

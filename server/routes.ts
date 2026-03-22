@@ -426,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })).filter((c) => c.storedNumber.length >= 5);
 
       const beforeResult = await pool.query(
-        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1",
+        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1 AND is_valid_international = true",
         [uploaderPhone]
       );
       const beforeCount = parseInt(beforeResult.rows[0].count, 10) || 0;
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const count = await upsertContacts(items);
 
       const afterResult = await pool.query(
-        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1",
+        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1 AND is_valid_international = true",
         [uploaderPhone]
       );
       const afterCount = parseInt(afterResult.rows[0].count, 10) || 0;
