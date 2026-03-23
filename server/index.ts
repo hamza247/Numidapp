@@ -243,6 +243,22 @@ function configureExpoAndLanding(app: express.Application) {
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app.use(express.static(path.resolve(process.cwd(), "static-build")));
 
+  // Legal pages
+  const legalPages: Record<string, string> = {
+    "/privacy": "privacy.html",
+    "/terms": "terms.html",
+    "/refund": "refund.html",
+    "/cookies": "cookies.html",
+  };
+  for (const [route, file] of Object.entries(legalPages)) {
+    const filePath = path.resolve(process.cwd(), "server", "templates", file);
+    const html = fs.readFileSync(filePath, "utf-8");
+    app.get(route, (_req: Request, res: Response) => {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.status(200).send(html);
+    });
+  }
+
   // Catch-all: redirect any unrecognised non-API path to the landing page
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) return next();
