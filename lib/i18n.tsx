@@ -221,7 +221,7 @@ export const translations = {
 
   ar: {
     appName: "من حفظني",
-    appTagline: "اكتشف من يملك رقم هاتفك",
+    appTagline: "اكتشف من يحفظ رقم هاتفك",
 
     login: "تسجيل الدخول",
     loginTitle: "مرحباً بعودتك",
