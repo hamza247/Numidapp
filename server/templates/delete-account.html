@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delete Account — NUMID</title>
+  <link rel="icon" href="/api/assets/favicon" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080C14;
+      --surface: #0F1623;
+      --surface2: #141D2E;
+      --teal: #00C9D4;
+      --teal-dim: rgba(0,201,212,0.12);
+      --red: #EF4444;
+      --red-dim: rgba(239,68,68,0.12);
+      --red-border: rgba(239,68,68,0.3);
+      --text: #F0F4FF;
+      --text-sec: #8B95A8;
+      --text-muted: #4A5568;
+      --border: rgba(255,255,255,0.07);
+      --radius: 16px;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    nav {
+      padding: 16px 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8,12,20,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo img { height: 32px; width: auto; display: block; }
+    .nav-back {
+      font-size: 14px; color: var(--text-sec);
+      text-decoration: none; display: flex; align-items: center; gap: 6px;
+      transition: color .2s;
+    }
+    .nav-back:hover { color: var(--teal); }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 460px;
+    }
+    @media (max-width: 500px) {
+      .card { padding: 32px 24px; border-radius: 16px; }
+    }
+
+    /* Step indicator */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background .3s;
+    }
+    .step-dot.active { background: var(--teal); }
+    .step-dot.done { background: var(--teal); opacity: .4; }
+    .step-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* Icons */
+    .icon-wrap {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 24px;
+    }
+    .icon-wrap.danger { background: var(--red-dim); border: 1px solid var(--red-border); }
+    .icon-wrap.info   { background: var(--teal-dim); border: 1px solid rgba(0,201,212,0.25); }
+    .icon-wrap.success{ background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); }
+
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .subtitle { font-size: .9rem; color: var(--text-sec); margin-bottom: 32px; line-height: 1.6; }
+
+    /* Warning box */
+    .warning-box {
+      background: var(--red-dim);
+      border: 1px solid var(--red-border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 28px;
+    }
+    .warning-box p { font-size: .85rem; color: var(--text-sec); line-height: 1.6; margin-bottom: 0; }
+    .warning-box ul { font-size: .85rem; color: var(--text-sec); padding-left: 16px; margin-top: 8px; }
+    .warning-box ul li { margin-bottom: 4px; }
+    .warning-title { font-size: .8rem; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+
+    /* Form */
+    label { display: block; font-size: .8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+    .input-wrap { position: relative; margin-bottom: 20px; }
+    input[type="tel"], input[type="text"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 16px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      transition: border-color .2s;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input:focus { border-color: rgba(0,201,212,0.4); }
+    input::placeholder { color: var(--text-muted); }
+    input.otp-input {
+      letter-spacing: .2em;
+      font-weight: 700;
+      font-size: 22px;
+      text-align: center;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      border: none;
+      transition: opacity .2s, transform .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+    .btn:not(:disabled):hover { transform: translateY(-1px); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-teal  { background: var(--teal); color: #000; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+      margin-top: 10px;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+
+    /* Error */
+    .error-msg {
+      display: none;
+      font-size: .85rem;
+      color: var(--red);
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: var(--red-dim);
+      border-radius: 8px;
+      border: 1px solid var(--red-border);
+    }
+    .error-msg.visible { display: block; }
+
+    /* Resend */
+    .resend-row {
+      text-align: center;
+      margin-top: 16px;
+      font-size: .85rem;
+      color: var(--text-muted);
+    }
+    .resend-btn {
+      background: none; border: none; color: var(--teal);
+      font-size: .85rem; font-family: 'Inter', sans-serif;
+      cursor: pointer; padding: 0;
+      transition: opacity .2s;
+    }
+    .resend-btn:disabled { opacity: .4; cursor: default; }
+
+    /* Success screen */
+    .check-circle {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.3);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    .spinner.dark {
+      border-color: rgba(0,0,0,0.2);
+      border-top-color: #000;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+
+    footer {
+      padding: 24px 5%;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+    footer p { font-size: .8rem; color: var(--text-muted); }
+    footer a { color: var(--teal); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/">
+    <img src="/api/assets/logo" alt="NUMID" />
+  </a>
+  <a class="nav-back" href="/">← Back to Home</a>
+</nav>
+
+<main>
+  <div class="card">
+
+    <!-- Step indicator -->
+    <div class="steps">
+      <div class="step-dot active" id="dot1"></div>
+      <div class="step-line"></div>
+      <div class="step-dot" id="dot2"></div>
+      <div class="step-line"></div>
+      <div class="step-dot" id="dot3"></div>
+    </div>
+
+    <!-- ── STEP 1: Phone number ── -->
+    <div id="step1">
+      <div class="icon-wrap danger">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </div>
+      <h1>Delete Account</h1>
+      <p class="subtitle">Enter your registered phone number to begin the account deletion process.</p>
+
+      <div class="warning-box">
+        <div class="warning-title">⚠ This action is permanent</div>
+        <p>Deleting your account will permanently remove:</p>
+        <ul>
+          <li>Your profile and display name</li>
+          <li>All contacts you have uploaded</li>
+          <li>Your coin balance and transaction history</li>
+          <li>Your referral code and rewards</li>
+        </ul>
+      </div>
+
+      <label for="phone1">Phone Number (with country code)</label>
+      <div class="input-wrap">
+        <input
+          id="phone1"
+          type="tel"
+          placeholder="+1 234 567 8901"
+          autocomplete="tel"
+        />
+      </div>
+
+      <div class="error-msg" id="err1"></div>
+
+      <button class="btn btn-danger" id="btnSendOtp" onclick="sendOtp()">
+        Send Verification Code
+      </button>
+      <button class="btn btn-ghost" onclick="window.location='/'">Cancel</button>
+    </div>
+
+    <!-- ── STEP 2: OTP verification ── -->
+    <div id="step2" class="hidden">
+      <div class="icon-wrap info">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C9D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h1>Verify It's You</h1>
+      <p class="subtitle" id="otpSubtitle">Enter the 6-digit code sent to your phone.</p>
+
+      <label for="otpCode">Verification Code</label>
+      <div class="input-wrap">
+        <input
+          id="otpCode"
+          type="text"
+          class="otp-input"
+          placeholder="000000"
+          maxlength="6"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
+      </div>
+
+      <div class="error-msg" id="err2"></div>
+
+      <button class="btn btn-teal" id="btnVerifyOtp" onclick="verifyOtp()">
+        Verify &amp; Continue
+      </button>
+      <div class="resend-row">
+        Didn't receive it? <button class="resend-btn" id="resendBtn" onclick="resendOtp()">Resend code</button>
+        <span id="resendTimer"></span>
+      </div>
+      <button class="btn btn-ghost" onclick="goBack()">← Back</button>
+    </div>
+
+    <!-- ── STEP 3: Final confirmation ── -->
+    <div id="step3" class="hidden">
+      <div class="icon-wrap danger">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <h1>Confirm Deletion</h1>
+      <p class="subtitle">This is your last chance. Once deleted, your account and all associated data cannot be recovered.</p>
+
+      <div class="warning-box" style="margin-bottom: 28px;">
+        <div class="warning-title">Deleting account for</div>
+        <p id="confirmPhone" style="font-weight: 600; color: #F0F4FF; font-size: .95rem; margin-top: 4px;"></p>
+      </div>
+
+      <div class="error-msg" id="err3"></div>
+
+      <button class="btn btn-danger" id="btnDelete" onclick="deleteAccount()">
+        Yes, Permanently Delete My Account
+      </button>
+      <button class="btn btn-ghost" onclick="goBack2()">← Go Back, Keep My Account</button>
+    </div>
+
+    <!-- ── STEP 4: Success ── -->
+    <div id="step4" class="hidden">
+      <div class="check-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h1>Account Deleted</h1>
+      <p class="subtitle">Your account and all associated data have been permanently deleted. We're sorry to see you go.</p>
+
+      <button class="btn btn-teal" onclick="window.location='/'">Return to Home</button>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <p>Need help? Contact us at <a href="mailto:hamzamassaoui@gmail.com">hamzamassaoui@gmail.com</a></p>
+</footer>
+
+<script>
+  let verifiedPhone = '';
+  let resendCountdown = null;
+
+  // ── Helpers ──
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+  function clearError(id) {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('visible');
+  }
+  function setLoading(btnId, loading, originalHTML) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner' + (btn.classList.contains('btn-teal') ? ' dark' : '') + '"></div> Please wait...';
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+  function updateSteps(active) {
+    [1,2,3].forEach(i => {
+      const dot = document.getElementById('dot'+i);
+      dot.className = 'step-dot';
+      if (i < active) dot.classList.add('done');
+      else if (i === active) dot.classList.add('active');
+    });
+  }
+  function startResendTimer(seconds) {
+    const btn = document.getElementById('resendBtn');
+    const timer = document.getElementById('resendTimer');
+    btn.disabled = true;
+    let remaining = seconds;
+    timer.textContent = ' (' + remaining + 's)';
+    clearInterval(resendCountdown);
+    resendCountdown = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(resendCountdown);
+        btn.disabled = false;
+        timer.textContent = '';
+      } else {
+        timer.textContent = ' (' + remaining + 's)';
+      }
+    }, 1000);
+  }
+
+  // ── Step 1: Send OTP ──
+  async function sendOtp() {
+    clearError('err1');
+    const raw = document.getElementById('phone1').value.trim();
+    if (!raw) { showError('err1', 'Please enter your phone number.'); return; }
+    const phone = raw.replace(/\s+/g, '').replace(/[^\d+]/g, '');
+    if (phone.length < 7) { showError('err1', 'Please enter a valid phone number including country code.'); return; }
+
+    setLoading('btnSendOtp', true, 'Send Verification Code');
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError('err1', data.error || 'Failed to send code. Please try again.');
+        setLoading('btnSendOtp', false, 'Send Verification Code');
+        return;
+      }
+      verifiedPhone = phone;
+      document.getElementById('otpSubtitle').textContent = 'Enter the 6-digit code sent to ' + phone + '.';
+      document.getElementById('step1').classList.add('hidden');
+      document.getElementById('step2').classList.remove('hidden');
+      updateSteps(2);
+      document.getElementById('otpCode').value = '';
+      document.getElementById('otpCode').focus();
+      startResendTimer(60);
+    } catch (e) {
+      showError('err1', 'Network error. Please check your connection and try again.');
+    }
+    setLoading('btnSendOtp', false, 'Send Verification Code');
+  }
+
+  // ── Step 2: Verify OTP ──
+  async function verifyOtp() {
+    clearError('err2');
+    const code = document.getElementById('otpCode').value.trim().replace(/\s/g, '');
+    if (!code || code.length < 6) { showError('err2', 'Please enter the 6-digit code.'); return; }
+
+    setLoading('btnVerifyOtp', true, 'Verify &amp; Continue');
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: verifiedPhone, code })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError('err2', data.error || 'Invalid or expired code. Please try again.');
+        setLoading('btnVerifyOtp', false, 'Verify &amp; Continue');
+        return;
+      }
+      document.getElementById('confirmPhone').textContent = verifiedPhone;
+      document.getElementById('step2').classList.add('hidden');
+      document.getElementById('step3').classList.remove('hidden');
+      updateSteps(3);
+    } catch (e) {
+      showError('err2', 'Network error. Please check your connection and try again.');
+    }
+    setLoading('btnVerifyOtp', false, 'Verify &amp; Continue');
+  }
+
+  // ── Resend OTP ──
+  async function resendOtp() {
+    clearError('err2');
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: verifiedPhone })
+      });
+      if (res.ok) {
+        startResendTimer(60);
+        document.getElementById('otpCode').value = '';
+        document.getElementById('otpCode').focus();
+      } else {
+        const data = await res.json();
+        showError('err2', data.error || 'Failed to resend. Please try again.');
+      }
+    } catch (e) {
+      showError('err2', 'Network error. Please try again.');
+    }
+  }
+
+  // ── Step 3: Delete account ──
+  async function deleteAccount() {
+    clearError('err3');
+    setLoading('btnDelete', true, 'Yes, Permanently Delete My Account');
+    try {
+      const res = await fetch('/api/profile?phone=' + encodeURIComponent(verifiedPhone), {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError('err3', data.error || 'Failed to delete account. Please try again or contact support.');
+        setLoading('btnDelete', false, 'Yes, Permanently Delete My Account');
+        return;
+      }
+      clearInterval(resendCountdown);
+      document.getElementById('step3').classList.add('hidden');
+      document.getElementById('step4').classList.remove('hidden');
+    } catch (e) {
+      showError('err3', 'Network error. Please check your connection and try again.');
+      setLoading('btnDelete', false, 'Yes, Permanently Delete My Account');
+    }
+  }
+
+  // ── Back navigation ──
+  function goBack() {
+    clearError('err2');
+    clearInterval(resendCountdown);
+    document.getElementById('resendTimer').textContent = '';
+    document.getElementById('step2').classList.add('hidden');
+    document.getElementById('step1').classList.remove('hidden');
+    updateSteps(1);
+  }
+  function goBack2() {
+    clearError('err3');
+    document.getElementById('step3').classList.add('hidden');
+    document.getElementById('step2').classList.remove('hidden');
+    updateSteps(2);
+    document.getElementById('otpCode').focus();
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    if (!document.getElementById('step1').classList.contains('hidden')) sendOtp();
+    else if (!document.getElementById('step2').classList.contains('hidden')) verifyOtp();
+    else if (!document.getElementById('step3').classList.contains('hidden')) deleteAccount();
+  });
+</script>
+
+</body>
+</html>

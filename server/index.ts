@@ -249,6 +249,7 @@ function configureExpoAndLanding(app: express.Application) {
     "/terms": "terms.html",
     "/refund": "refund.html",
     "/cookies": "cookies.html",
+    "/delete-account": "delete-account.html",
   };
   for (const [route, file] of Object.entries(legalPages)) {
     const filePath = path.resolve(process.cwd(), "server", "templates", file);
