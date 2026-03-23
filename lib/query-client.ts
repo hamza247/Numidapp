@@ -4,12 +4,10 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 /**
  * Gets the base URL for the Express API server (e.g., "https://numidapp.co/")
  * Avoids new URL() to prevent Hermes polyfill issues in native production builds.
+ * Falls back to the production domain when EXPO_PUBLIC_DOMAIN is not set (e.g. standalone APK builds).
  */
 export function getApiUrl(): string {
-  const host = process.env.EXPO_PUBLIC_DOMAIN;
-  if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
-  }
+  const host = process.env.EXPO_PUBLIC_DOMAIN || "numidapp.co";
   const base = host.startsWith("http") ? host : `https://${host}`;
   return base.endsWith("/") ? base : `${base}/`;
 }
