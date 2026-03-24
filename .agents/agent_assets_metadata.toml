@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "JCheY61Ucc8Qm0qQPtAZk"
+uri = "file://attached_assets/generated_images/playstore-feature-graphic.png"
+type = "image"
+title = "Play Store Feature Graphic (16:9)"
