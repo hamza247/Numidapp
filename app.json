@@ -26,10 +26,9 @@
         "READ_CONTACTS"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#080C14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#080C14",
+        "monochromeImage": "./assets/images/android-icon-foreground.png"
       }
     },
     "web": {
