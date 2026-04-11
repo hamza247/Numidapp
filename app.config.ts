@@ -11,8 +11,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...config,
-    name: "Numidapp",
-    slug: "numidapp",
+    name: "numidapp caller",
+    slug: "numidapp-caller",
     plugins: [
       "expo-router",
       "expo-font",

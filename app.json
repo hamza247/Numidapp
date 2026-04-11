@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Numidapp",
-    "slug": "numidapp",
+    "name": "numidapp caller",
+    "slug": "numidapp-caller",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,7 +17,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "co.numapp.app",
       "infoPlist": {
-        "NSContactsUsageDescription": "We need access to your contacts to help others find who saved their number."
+        "NSContactsUsageDescription": "numidapp caller uses your contacts only to show you which of your saved contacts are on the app. Your contact data is never shared with third parties or stored without your consent."
       }
     },
     "android": {
