@@ -15,20 +15,19 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.numidapp.app",
+      "bundleIdentifier": "co.numapp.app",
       "infoPlist": {
         "NSContactsUsageDescription": "We need access to your contacts to help others find who saved their number."
       }
     },
     "android": {
-      "package": "com.numidapp.app",
+      "package": "co.numapp.app",
       "permissions": [
         "READ_CONTACTS"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundColor": "#E8ECF2",
-        "monochromeImage": "./assets/images/android-icon-foreground.png"
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#E8ECF2"
       }
     },
     "web": {
