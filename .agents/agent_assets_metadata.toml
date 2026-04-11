@@ -1,5 +1,10 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "1TXourmUngdFAkpnR5mM-"
+uri = "file://attached_assets/splash_preview.png"
+type = "image"
+title = "splash screen design"
 
 [[outputs]]
 id = "JCheY61Ucc8Qm0qQPtAZk"
