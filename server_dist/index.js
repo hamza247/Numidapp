@@ -1,85 +1,232 @@
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
 // server/index.ts
-import express from "express";
-import { createProxyMiddleware } from "http-proxy-middleware";
+var import_express = __toESM(require("express"));
+var import_http_proxy_middleware = require("http-proxy-middleware");
 
 // server/routes.ts
-import { createServer } from "node:http";
-import nodemailer from "nodemailer";
-import Stripe from "stripe";
+var import_node_http = require("node:http");
+var import_nodemailer = __toESM(require("nodemailer"));
+var import_stripe = __toESM(require("stripe"));
 
 // server/storage.ts
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+var import_node_postgres = require("drizzle-orm/node-postgres");
+var import_pg = require("pg");
 
 // shared/schema.ts
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, boolean, timestamp, index, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-var users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull()
+var import_drizzle_orm = require("drizzle-orm");
+var import_pg_core = require("drizzle-orm/pg-core");
+var import_drizzle_zod = require("drizzle-zod");
+var users = (0, import_pg_core.pgTable)("users", {
+  id: (0, import_pg_core.varchar)("id").primaryKey().default(import_drizzle_orm.sql`gen_random_uuid()`),
+  username: (0, import_pg_core.text)("username").notNull().unique(),
+  password: (0, import_pg_core.text)("password").notNull()
 });
-var contacts = pgTable(
+var contacts = (0, import_pg_core.pgTable)(
   "contacts",
   {
-    id: serial("id").primaryKey(),
-    uploaderPhone: varchar("uploader_phone", { length: 20 }).notNull(),
-    storedNumber: varchar("stored_number", { length: 20 }).notNull(),
-    storedName: varchar("stored_name", { length: 255 }).notNull(),
-    label: varchar("label", { length: 100 }).default("mobile"),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow()
+    id: (0, import_pg_core.serial)("id").primaryKey(),
+    uploaderPhone: (0, import_pg_core.varchar)("uploader_phone", { length: 20 }).notNull(),
+    storedNumber: (0, import_pg_core.varchar)("stored_number", { length: 20 }).notNull(),
+    storedName: (0, import_pg_core.varchar)("stored_name", { length: 255 }).notNull(),
+    label: (0, import_pg_core.varchar)("label", { length: 100 }).default("mobile"),
+    isValidInternational: (0, import_pg_core.boolean)("is_valid_international").default(false),
+    createdAt: (0, import_pg_core.timestamp)("created_at").defaultNow(),
+    updatedAt: (0, import_pg_core.timestamp)("updated_at").defaultNow()
   },
   (table) => [
-    index("idx_stored_number").on(table.storedNumber),
-    unique("idx_uploader_stored").on(table.uploaderPhone, table.storedNumber)
+    (0, import_pg_core.index)("idx_stored_number").on(table.storedNumber),
+    (0, import_pg_core.unique)("idx_uploader_stored").on(table.uploaderPhone, table.storedNumber)
   ]
 );
-var insertContactSchema = createInsertSchema(contacts).pick({
+var insertContactSchema = (0, import_drizzle_zod.createInsertSchema)(contacts).pick({
   uploaderPhone: true,
   storedNumber: true,
   storedName: true,
   label: true
 });
-var insertUserSchema = createInsertSchema(users).pick({
+var insertUserSchema = (0, import_drizzle_zod.createInsertSchema)(users).pick({
   username: true,
   password: true
 });
-var profiles = pgTable("profiles", {
-  id: serial("id").primaryKey(),
-  fullName: varchar("full_name", { length: 100 }).notNull(),
-  phone: varchar("phone", { length: 20 }).notNull().unique(),
-  countryCode: varchar("country_code", { length: 5 }).notNull(),
-  passwordHash: text("password_hash"),
-  coins: integer("coins").notNull().default(5),
-  avatarBase64: text("avatar_base64"),
-  createdAt: timestamp("created_at").defaultNow()
+var profiles = (0, import_pg_core.pgTable)("profiles", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  fullName: (0, import_pg_core.varchar)("full_name", { length: 100 }).notNull(),
+  phone: (0, import_pg_core.varchar)("phone", { length: 20 }).notNull().unique(),
+  countryCode: (0, import_pg_core.varchar)("country_code", { length: 5 }).notNull(),
+  passwordHash: (0, import_pg_core.text)("password_hash"),
+  coins: (0, import_pg_core.integer)("coins").notNull().default(5),
+  avatarBase64: (0, import_pg_core.text)("avatar_base64"),
+  createdAt: (0, import_pg_core.timestamp)("created_at").defaultNow()
 });
-var insertProfileSchema = createInsertSchema(profiles).pick({
+var insertProfileSchema = (0, import_drizzle_zod.createInsertSchema)(profiles).pick({
   fullName: true,
   phone: true,
   countryCode: true
 });
-var removedNumbers = pgTable("removed_numbers", {
-  phone: varchar("phone", { length: 20 }).primaryKey(),
-  removedAt: timestamp("removed_at").defaultNow()
+var removedNumbers = (0, import_pg_core.pgTable)("removed_numbers", {
+  phone: (0, import_pg_core.varchar)("phone", { length: 20 }).primaryKey(),
+  removedAt: (0, import_pg_core.timestamp)("removed_at").defaultNow()
 });
-var phoneVerifications = pgTable("phone_verifications", {
-  id: serial("id").primaryKey(),
-  phone: varchar("phone", { length: 20 }).notNull(),
-  code: varchar("code", { length: 6 }).notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  attempts: integer("attempts").default(0).notNull(),
-  verified: boolean("verified").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow()
+var phoneVerifications = (0, import_pg_core.pgTable)("phone_verifications", {
+  id: (0, import_pg_core.serial)("id").primaryKey(),
+  phone: (0, import_pg_core.varchar)("phone", { length: 20 }).notNull(),
+  code: (0, import_pg_core.varchar)("code", { length: 6 }).notNull(),
+  expiresAt: (0, import_pg_core.timestamp)("expires_at").notNull(),
+  attempts: (0, import_pg_core.integer)("attempts").default(0).notNull(),
+  verified: (0, import_pg_core.boolean)("verified").default(false).notNull(),
+  createdAt: (0, import_pg_core.timestamp)("created_at").defaultNow()
 });
 
 // server/storage.ts
-import { eq, sql as sql2, and, inArray } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-var pool = new Pool({ connectionString: process.env.DATABASE_URL });
-var db = drizzle(pool);
+var import_drizzle_orm2 = require("drizzle-orm");
+var import_bcryptjs = __toESM(require("bcryptjs"));
+
+// server/phoneUtils.ts
+var DIAL_CODES_3 = /* @__PURE__ */ new Set([
+  "971",
+  "966",
+  "965",
+  "974",
+  "973",
+  "968",
+  "964",
+  "962",
+  "961",
+  "963",
+  "967",
+  "970",
+  "972",
+  "234",
+  "233",
+  "212",
+  "216",
+  "213",
+  "218",
+  "249",
+  "251",
+  "254",
+  "255",
+  "256",
+  "237",
+  "221",
+  "225",
+  "252",
+  "380",
+  "351",
+  "353",
+  "358",
+  "359",
+  "385",
+  "381",
+  "420",
+  "880",
+  "977",
+  "852",
+  "886",
+  "593",
+  "502",
+  "504",
+  "503",
+  "506",
+  "507"
+]);
+var DIAL_CODES_2 = /* @__PURE__ */ new Set([
+  "44",
+  "61",
+  "49",
+  "33",
+  "91",
+  "81",
+  "86",
+  "55",
+  "52",
+  "82",
+  "39",
+  "34",
+  "20",
+  "27",
+  "92",
+  "90",
+  "62",
+  "63",
+  "84",
+  "66",
+  "60",
+  "65",
+  "64",
+  "46",
+  "47",
+  "45",
+  "31",
+  "32",
+  "41",
+  "43",
+  "48",
+  "30",
+  "40",
+  "36",
+  "98",
+  "95",
+  "94",
+  "93",
+  "58",
+  "56",
+  "57",
+  "51",
+  "54",
+  "53"
+]);
+var DIAL_CODES_1 = /* @__PURE__ */ new Set(["1", "7"]);
+var MIN_LOCAL_DIGITS = 6;
+function isValidInternationalPhone(digits) {
+  if (!digits || digits.length < MIN_LOCAL_DIGITS + 1) return false;
+  if (digits.length >= 3 + MIN_LOCAL_DIGITS) {
+    const prefix3 = digits.slice(0, 3);
+    if (DIAL_CODES_3.has(prefix3)) {
+      return digits.length - 3 >= MIN_LOCAL_DIGITS;
+    }
+  }
+  if (digits.length >= 2 + MIN_LOCAL_DIGITS) {
+    const prefix2 = digits.slice(0, 2);
+    if (DIAL_CODES_2.has(prefix2)) {
+      return digits.length - 2 >= MIN_LOCAL_DIGITS;
+    }
+  }
+  if (digits.length >= 1 + MIN_LOCAL_DIGITS) {
+    const prefix1 = digits.slice(0, 1);
+    if (DIAL_CODES_1.has(prefix1)) {
+      return digits.length - 1 >= MIN_LOCAL_DIGITS;
+    }
+  }
+  return false;
+}
+
+// server/storage.ts
+var pool = new import_pg.Pool({ connectionString: process.env.DATABASE_URL });
+var db = (0, import_node_postgres.drizzle)(pool);
 async function upsertContacts(items) {
   if (items.length === 0) return 0;
   const seen = /* @__PURE__ */ new Map();
@@ -93,7 +240,7 @@ async function upsertContacts(items) {
   const blockedSet = /* @__PURE__ */ new Set();
   for (let i = 0; i < allNumbers.length; i += batchSize) {
     const chunk = allNumbers.slice(i, i + batchSize);
-    const blocked = await db.select({ phone: removedNumbers.phone }).from(removedNumbers).where(inArray(removedNumbers.phone, chunk));
+    const blocked = await db.select({ phone: removedNumbers.phone }).from(removedNumbers).where((0, import_drizzle_orm2.inArray)(removedNumbers.phone, chunk));
     blocked.forEach((r) => blockedSet.add(r.phone));
   }
   deduped = deduped.filter((item) => !blockedSet.has(item.storedNumber));
@@ -101,12 +248,16 @@ async function upsertContacts(items) {
   const insertBatch = 100;
   for (let i = 0; i < deduped.length; i += insertBatch) {
     const batch = deduped.slice(i, i + insertBatch);
-    await db.insert(contacts).values(batch).onConflictDoUpdate({
+    await db.insert(contacts).values(batch.map((item) => ({
+      ...item,
+      isValidInternational: isValidInternationalPhone(item.storedNumber)
+    }))).onConflictDoUpdate({
       target: [contacts.uploaderPhone, contacts.storedNumber],
       set: {
-        storedName: sql2`excluded.stored_name`,
-        label: sql2`excluded.label`,
-        updatedAt: sql2`NOW()`
+        storedName: import_drizzle_orm2.sql`excluded.stored_name`,
+        label: import_drizzle_orm2.sql`excluded.label`,
+        isValidInternational: import_drizzle_orm2.sql`excluded.is_valid_international`,
+        updatedAt: import_drizzle_orm2.sql`NOW()`
       }
     });
   }
@@ -117,7 +268,7 @@ async function searchNumber(phoneNumber) {
   const variants = getPhoneVariants(normalized);
   const results = [];
   const seen = /* @__PURE__ */ new Set();
-  const blockedRow = await db.select({ phone: removedNumbers.phone }).from(removedNumbers).where(inArray(removedNumbers.phone, variants));
+  const blockedRow = await db.select({ phone: removedNumbers.phone }).from(removedNumbers).where((0, import_drizzle_orm2.inArray)(removedNumbers.phone, variants));
   if (blockedRow.length > 0) return [];
   for (const variant of variants) {
     const rows = await db.select({
@@ -125,7 +276,7 @@ async function searchNumber(phoneNumber) {
       label: contacts.label,
       uploaderPhone: contacts.uploaderPhone,
       uploaderName: profiles.fullName
-    }).from(contacts).leftJoin(profiles, eq(contacts.uploaderPhone, profiles.phone)).where(eq(contacts.storedNumber, variant));
+    }).from(contacts).leftJoin(profiles, (0, import_drizzle_orm2.eq)(contacts.uploaderPhone, profiles.phone)).where((0, import_drizzle_orm2.eq)(contacts.storedNumber, variant));
     for (const row of rows) {
       const key = `${row.uploaderPhone}__${row.storedName}`;
       if (!seen.has(key)) {
@@ -143,22 +294,22 @@ async function searchNumber(phoneNumber) {
 async function createOrReplaceOtp(phone) {
   const code = "112233";
   const expiresAt = new Date(Date.now() + 10 * 60 * 1e3);
-  await db.delete(phoneVerifications).where(eq(phoneVerifications.phone, phone));
+  await db.delete(phoneVerifications).where((0, import_drizzle_orm2.eq)(phoneVerifications.phone, phone));
   await db.insert(phoneVerifications).values({ phone, code, expiresAt });
   return code;
 }
 async function verifyOtp(phone, code) {
-  const [row] = await db.select().from(phoneVerifications).where(and(eq(phoneVerifications.phone, phone), eq(phoneVerifications.verified, false)));
+  const [row] = await db.select().from(phoneVerifications).where((0, import_drizzle_orm2.and)((0, import_drizzle_orm2.eq)(phoneVerifications.phone, phone), (0, import_drizzle_orm2.eq)(phoneVerifications.verified, false)));
   if (!row) return { success: false, reason: "No pending verification found. Please request a new code." };
   if (/* @__PURE__ */ new Date() > row.expiresAt) return { success: false, reason: "Code has expired. Please request a new one." };
   if (row.attempts >= 5) return { success: false, reason: "Too many attempts. Please request a new code." };
-  await db.update(phoneVerifications).set({ attempts: row.attempts + 1 }).where(eq(phoneVerifications.id, row.id));
+  await db.update(phoneVerifications).set({ attempts: row.attempts + 1 }).where((0, import_drizzle_orm2.eq)(phoneVerifications.id, row.id));
   if (row.code !== code) return { success: false, reason: "Incorrect code. Please try again." };
-  await db.update(phoneVerifications).set({ verified: true }).where(eq(phoneVerifications.id, row.id));
+  await db.update(phoneVerifications).set({ verified: true }).where((0, import_drizzle_orm2.eq)(phoneVerifications.id, row.id));
   return { success: true };
 }
 async function isPhoneVerified(phone) {
-  const [row] = await db.select().from(phoneVerifications).where(and(eq(phoneVerifications.phone, phone), eq(phoneVerifications.verified, true)));
+  const [row] = await db.select().from(phoneVerifications).where((0, import_drizzle_orm2.and)((0, import_drizzle_orm2.eq)(phoneVerifications.phone, phone), (0, import_drizzle_orm2.eq)(phoneVerifications.verified, true)));
   return !!row;
 }
 async function createProfile(data, initialCoins) {
@@ -167,50 +318,50 @@ async function createProfile(data, initialCoins) {
   return profile;
 }
 async function createProfileWithPassword(data, password, initialCoins) {
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await import_bcryptjs.default.hash(password, 10);
   const extra = initialCoins !== void 0 ? { coins: initialCoins } : {};
   const [profile] = await db.insert(profiles).values({ ...data, passwordHash, ...extra }).returning();
   return profile;
 }
 async function loginWithPassword(phone, password) {
-  const [profile] = await db.select().from(profiles).where(eq(profiles.phone, phone));
+  const [profile] = await db.select().from(profiles).where((0, import_drizzle_orm2.eq)(profiles.phone, phone));
   if (!profile) {
     return { success: false, reason: "No account found with this phone number." };
   }
   if (!profile.passwordHash) {
     return { success: false, reason: "This account does not have a password set." };
   }
-  const match = await bcrypt.compare(password, profile.passwordHash);
+  const match = await import_bcryptjs.default.compare(password, profile.passwordHash);
   if (!match) {
     return { success: false, reason: "Incorrect password. Please try again." };
   }
   return { success: true, profile };
 }
 async function getProfileByPhone(phone) {
-  const [profile] = await db.select().from(profiles).where(eq(profiles.phone, phone));
+  const [profile] = await db.select().from(profiles).where((0, import_drizzle_orm2.eq)(profiles.phone, phone));
   return profile ?? null;
 }
 async function getCoins(phone) {
-  const [row] = await db.select({ coins: profiles.coins }).from(profiles).where(eq(profiles.phone, phone));
+  const [row] = await db.select({ coins: profiles.coins }).from(profiles).where((0, import_drizzle_orm2.eq)(profiles.phone, phone));
   return row?.coins ?? 5;
 }
 async function updateCoins(phone, delta) {
-  const [row] = await db.update(profiles).set({ coins: sql2`GREATEST(0, coins + ${delta})` }).where(eq(profiles.phone, phone)).returning({ coins: profiles.coins });
+  const [row] = await db.update(profiles).set({ coins: import_drizzle_orm2.sql`GREATEST(0, coins + ${delta})` }).where((0, import_drizzle_orm2.eq)(profiles.phone, phone)).returning({ coins: profiles.coins });
   return row?.coins ?? 0;
 }
 async function setCoinsExact(phone, amount) {
-  const [row] = await db.update(profiles).set({ coins: Math.max(0, amount) }).where(eq(profiles.phone, phone)).returning({ coins: profiles.coins });
+  const [row] = await db.update(profiles).set({ coins: Math.max(0, amount) }).where((0, import_drizzle_orm2.eq)(profiles.phone, phone)).returning({ coins: profiles.coins });
   return row?.coins ?? 0;
 }
 async function setProfilePassword(phone, password) {
-  const passwordHash = await bcrypt.hash(password, 10);
-  const [profile] = await db.update(profiles).set({ passwordHash }).where(eq(profiles.phone, phone)).returning();
+  const passwordHash = await import_bcryptjs.default.hash(password, 10);
+  const [profile] = await db.update(profiles).set({ passwordHash }).where((0, import_drizzle_orm2.eq)(profiles.phone, phone)).returning();
   return profile;
 }
 async function deleteProfile(phone) {
-  await db.delete(contacts).where(eq(contacts.uploaderPhone, phone));
-  await db.delete(profiles).where(eq(profiles.phone, phone));
-  await db.delete(phoneVerifications).where(eq(phoneVerifications.phone, phone));
+  await db.delete(contacts).where((0, import_drizzle_orm2.eq)(contacts.uploaderPhone, phone));
+  await db.delete(profiles).where((0, import_drizzle_orm2.eq)(profiles.phone, phone));
+  await db.delete(phoneVerifications).where((0, import_drizzle_orm2.eq)(phoneVerifications.phone, phone));
 }
 function generateReferralCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -223,7 +374,7 @@ function generateReferralCode() {
 async function removePhoneFromContacts(phone) {
   const normalized = phone.replace(/\D/g, "");
   await db.insert(removedNumbers).values({ phone: normalized }).onConflictDoNothing();
-  const result = await db.delete(contacts).where(eq(contacts.storedNumber, normalized));
+  const result = await db.delete(contacts).where((0, import_drizzle_orm2.eq)(contacts.storedNumber, normalized));
   return result.rowCount ?? 0;
 }
 function normalizePhone(phone) {
@@ -248,7 +399,7 @@ function getPhoneVariants(digits) {
 }
 
 // server/routes.ts
-import { z } from "zod";
+var import_zod = require("zod");
 async function getStripeSettings() {
   const result = await pool.query(
     `SELECT key, value FROM app_settings WHERE key IN (
@@ -267,10 +418,10 @@ function buildStripeClient(settings) {
   if (settings.stripe_enabled !== "1") return null;
   const key = settings.stripe_mode === "live" ? settings.stripe_sk_live : settings.stripe_sk_test;
   if (!key) return null;
-  return new Stripe(key, { apiVersion: "2024-12-18.acacia" });
+  return new import_stripe.default(key, { apiVersion: "2024-12-18.acacia" });
 }
 var PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -288,8 +439,11 @@ var PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
     .close-btn:hover{background:#00b5bf}
   </style>
   <script>
-    function returnToApp(){window.location.href='whosavedme://payment-complete?status=success';}
+    var _sid=(new URLSearchParams(window.location.search)).get('session_id')||'';
+    function returnToApp(){window.location.href='numidapp-caller://payment-complete?status=success&session_id='+encodeURIComponent(_sid);}
     setTimeout(returnToApp,1500);
+    var T={en:{title:"Payment Successful!",msg:"Your coins have been added to your account. Returning to the app\\u2026",badge:"\\ud83d\\udc8e Coins credited",btn:"Return to App"},ar:{title:"\\u062a\\u0645\\u062a \\u0639\\u0645\\u0644\\u064a\\u0629 \\u0627\\u0644\\u062f\\u0641\\u0639 \\u0628\\u0646\\u062c\\u0627\\u062d!",msg:"\\u062a\\u0645\\u062a \\u0625\\u0636\\u0627\\u0641\\u0629 \\u0627\\u0644\\u0639\\u0645\\u0644\\u0627\\u062a \\u0625\\u0644\\u0649 \\u062d\\u0633\\u0627\\u0628\\u0643. \\u062c\\u0627\\u0631\\u064d \\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642\\u2026",badge:"\\ud83d\\udc8e \\u062a\\u0645 \\u0625\\u0636\\u0627\\u0641\\u0629 \\u0627\\u0644\\u0639\\u0645\\u0644\\u0627\\u062a",btn:"\\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642"},fr:{title:"Paiement r\\u00e9ussi !",msg:"Vos pi\\u00e8ces ont \\u00e9t\\u00e9 ajout\\u00e9es \\u00e0 votre compte. Retour \\u00e0 l\\u2019application\\u2026",badge:"\\ud83d\\udc8e Pi\\u00e8ces cr\\u00e9dit\\u00e9es",btn:"Retour \\u00e0 l\\u2019application"}};
+    document.addEventListener("DOMContentLoaded",function(){var p=new URLSearchParams(window.location.search);var l=p.get("lang")||"en";var s=T[l]||T.en;document.getElementById("t").textContent=s.title;document.getElementById("m").textContent=s.msg;document.getElementById("b").textContent=s.badge;document.getElementById("btn").textContent=s.btn;if(l==="ar"){document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar");}else if(l==="fr"){document.documentElement.setAttribute("lang","fr");}else{document.documentElement.setAttribute("lang","en");}});
   </script>
 </head>
 <body>
@@ -299,15 +453,15 @@ var PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
         <path d="M20 6L9 17l-5-5"/>
       </svg>
     </div>
-    <h1>Payment Successful!</h1>
-    <p>Your coins have been added to your account. Returning to the app\u2026</p>
-    <div class="badge">\u{1F48E} Coins credited</div>
-    <button class="close-btn" onclick="returnToApp()">Return to App</button>
+    <h1 id="t">Payment Successful!</h1>
+    <p id="m">Your coins have been added to your account. Returning to the app\u2026</p>
+    <div class="badge" id="b">\u{1F48E} Coins credited</div>
+    <button class="close-btn" id="btn" onclick="returnToApp()">Return to App</button>
   </div>
 </body>
 </html>`;
 var PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -323,6 +477,12 @@ var PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
     .close-btn{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;width:100%}
     .close-btn:hover{background:rgba(255,255,255,0.12)}
   </style>
+  <script>
+    function returnToApp(){window.location.href='numidapp-caller://payment-complete?status=cancel';}
+    setTimeout(returnToApp,1500);
+    var T={en:{title:"Payment Cancelled",msg:"No charges were made. Returning to the app\\u2026",btn:"Return to App"},ar:{title:"\\u062a\\u0645 \\u0625\\u0644\\u063a\\u0627\\u0621 \\u0627\\u0644\\u062f\\u0641\\u0639",msg:"\\u0644\\u0645 \\u064a\\u062a\\u0645 \\u062e\\u0635\\u0645 \\u0623\\u064a \\u0645\\u0628\\u0644\\u063a. \\u062c\\u0627\\u0631\\u064d \\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642\\u2026",btn:"\\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642"},fr:{title:"Paiement annul\\u00e9",msg:"Aucun frais n\\u2019a \\u00e9t\\u00e9 pr\\u00e9lev\\u00e9. Retour \\u00e0 l\\u2019application\\u2026",btn:"Retour \\u00e0 l\\u2019application"}};
+    document.addEventListener("DOMContentLoaded",function(){var p=new URLSearchParams(window.location.search);var l=p.get("lang")||"en";var s=T[l]||T.en;document.getElementById("t").textContent=s.title;document.getElementById("m").textContent=s.msg;document.getElementById("btn").textContent=s.btn;if(l==="ar"){document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar");}else if(l==="fr"){document.documentElement.setAttribute("lang","fr");}else{document.documentElement.setAttribute("lang","en");}});
+  </script>
 </head>
 <body>
   <div class="card">
@@ -331,10 +491,9 @@ var PAYMENT_CANCEL_HTML = `<!DOCTYPE html>
         <path d="M18 6L6 18M6 6l12 12"/>
       </svg>
     </div>
-    <h1>Payment Cancelled</h1>
-    <p>No charges were made. Returning to the app\u2026</p>
-    <button class="close-btn" onclick="window.location.href='whosavedme://payment-complete?status=cancel'">Return to App</button>
-  <script>setTimeout(()=>{window.location.href='whosavedme://payment-complete?status=cancel';},1500);</script>
+    <h1 id="t">Payment Cancelled</h1>
+    <p id="m">No charges were made. Returning to the app\u2026</p>
+    <button class="close-btn" id="btn" onclick="returnToApp()">Return to App</button>
   </div>
 </body>
 </html>`;
@@ -370,41 +529,41 @@ async function sendSmsOtp(to, code) {
     return false;
   }
 }
-var uploadSchema = z.object({
-  uploaderPhone: z.string().min(7).max(20),
-  contacts: z.array(
-    z.object({
-      storedNumber: z.string().min(3).max(20),
-      storedName: z.string().min(1).max(255),
-      label: z.string().max(100).default("mobile")
+var uploadSchema = import_zod.z.object({
+  uploaderPhone: import_zod.z.string().min(7).max(20),
+  contacts: import_zod.z.array(
+    import_zod.z.object({
+      storedNumber: import_zod.z.string().min(3).max(20),
+      storedName: import_zod.z.string().min(1).max(255),
+      label: import_zod.z.string().max(100).default("mobile")
     })
   ).max(5e4)
 });
-var searchSchema = z.object({
-  phone: z.string().min(5).max(20)
+var searchSchema = import_zod.z.object({
+  phone: import_zod.z.string().min(5).max(20)
 });
-var profileSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long").regex(/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/, "Name contains invalid characters"),
-  phone: z.string().min(7, "Phone number is too short").max(20, "Phone number is too long"),
-  countryCode: z.string().min(1).max(5)
+var profileSchema = import_zod.z.object({
+  fullName: import_zod.z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long").regex(/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/, "Name contains invalid characters"),
+  phone: import_zod.z.string().min(7, "Phone number is too short").max(20, "Phone number is too long"),
+  countryCode: import_zod.z.string().min(1).max(5)
 });
-var sendOtpSchema = z.object({
-  phone: z.string().min(7).max(20)
+var sendOtpSchema = import_zod.z.object({
+  phone: import_zod.z.string().min(7).max(20)
 });
-var verifyOtpSchema = z.object({
-  phone: z.string().min(7).max(20),
-  code: z.string().length(6).regex(/^\d{6}$/)
+var verifyOtpSchema = import_zod.z.object({
+  phone: import_zod.z.string().min(7).max(20),
+  code: import_zod.z.string().length(6).regex(/^\d{6}$/)
 });
-var registerSchema = z.object({
-  phone: z.string().min(7).max(20),
-  fullName: z.string().min(2).max(100).regex(/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/),
-  countryCode: z.string().min(1).max(5),
-  password: z.string().min(6, "Password must be at least 6 characters").max(100),
-  referralCode: z.string().min(4).max(10).optional()
+var registerSchema = import_zod.z.object({
+  phone: import_zod.z.string().min(7).max(20),
+  fullName: import_zod.z.string().min(2).max(100).regex(/^[a-zA-Z\s\-'.\u00C0-\u024F\u0600-\u06FF\u0400-\u04FF]+$/),
+  countryCode: import_zod.z.string().min(1).max(5),
+  password: import_zod.z.string().min(6, "Password must be at least 6 characters").max(100),
+  referralCode: import_zod.z.string().min(4).max(10).optional()
 });
-var loginSchema = z.object({
-  phone: z.string().min(7).max(20),
-  password: z.string().min(1).max(100)
+var loginSchema = import_zod.z.object({
+  phone: import_zod.z.string().min(7).max(20),
+  password: import_zod.z.string().min(1).max(100)
 });
 async function registerRoutes(app2) {
   await pool.query("CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(255) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())");
@@ -473,9 +632,7 @@ async function registerRoutes(app2) {
         const profile2 = await setProfilePassword(phone, password);
         return res.json({ profile: { fullName: profile2.fullName, phone: profile2.phone, countryCode: profile2.countryCode } });
       }
-      const icResult = await pool.query("SELECT value FROM app_settings WHERE key = 'initial_coins'");
-      const initialCoins = icResult.rows.length ? parseInt(icResult.rows[0].value, 10) || 5 : 5;
-      const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password, initialCoins);
+      const profile = await createProfileWithPassword({ fullName, phone, countryCode }, password, 0);
       let generatedCode = generateReferralCode();
       for (let attempt = 0; attempt < 5; attempt++) {
         try {
@@ -572,9 +729,7 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: "Invalid profile data", details: errors.fieldErrors });
       }
       const { fullName, phone, countryCode } = parsed.data;
-      const icResult2 = await pool.query("SELECT value FROM app_settings WHERE key = 'initial_coins'");
-      const initialCoins2 = icResult2.rows.length ? parseInt(icResult2.rows[0].value, 10) || 5 : 5;
-      const profile = await createProfile({ fullName, phone, countryCode }, initialCoins2);
+      const profile = await createProfile({ fullName, phone, countryCode }, 0);
       return res.json({ profile });
     } catch (err) {
       if (err?.code === "23505") {
@@ -624,9 +779,24 @@ async function registerRoutes(app2) {
         storedName: c.storedName,
         label: c.label
       })).filter((c) => c.storedNumber.length >= 5);
+      const beforeResult = await pool.query(
+        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1 AND is_valid_international = true",
+        [uploaderPhone]
+      );
+      const beforeCount = parseInt(beforeResult.rows[0].count, 10) || 0;
       const count = await upsertContacts(items);
+      const afterResult = await pool.query(
+        "SELECT COUNT(*) FROM contacts WHERE uploader_phone = $1 AND is_valid_international = true",
+        [uploaderPhone]
+      );
+      const afterCount = parseInt(afterResult.rows[0].count, 10) || 0;
+      const coinsEarned = Math.floor(afterCount / 10) - Math.floor(beforeCount / 10);
+      if (coinsEarned > 0) {
+        await updateCoins(uploaderPhone, coinsEarned);
+        console.log(`[Contacts] +${coinsEarned} coins \u2192 ${uploaderPhone} (${afterCount} total contacts)`);
+      }
       console.log(`Successfully uploaded ${count} contacts`);
-      return res.json({ uploaded: count });
+      return res.json({ uploaded: count, coinsEarned });
     } catch (err) {
       console.error("Upload error:", err);
       return res.status(500).json({ error: "Server error during upload" });
@@ -688,7 +858,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/app-settings", async (_req, res) => {
     try {
-      const result = await pool.query("SELECT key, value FROM app_settings WHERE key IN ('maintenance_mode', 'ads_enabled', 'ad_provider', 'custom_banner_url', 'custom_banner_link', 'ad_frequency', 'rewarded_coin_amount', 'stripe_enabled', 'stripe_mode', 'stripe_currency', 'stripe_coin_price', 'stripe_coin_amount')");
+      const result = await pool.query("SELECT key, value FROM app_settings WHERE key IN ('maintenance_mode', 'ads_enabled', 'ad_provider', 'custom_banner_url', 'custom_banner_link', 'ad_frequency', 'admob_app_id', 'admob_banner_android', 'admob_banner_ios', 'rewarded_coin_amount', 'stripe_enabled', 'stripe_mode', 'stripe_currency', 'stripe_coin_price', 'stripe_coin_amount')");
       const settings = {};
       for (const row of result.rows) {
         settings[row.key] = row.value;
@@ -731,7 +901,7 @@ async function registerRoutes(app2) {
     const toEmail = "hamzamassaoui@gmail.com";
     if (smtpUser && smtpPass) {
       try {
-        const transporter = nodemailer.createTransport({
+        const transporter = import_nodemailer.default.createTransport({
           service: "gmail",
           auth: { user: smtpUser, pass: smtpPass }
         });
@@ -816,7 +986,7 @@ ${message}`);
     }
   });
   app2.post("/api/stripe/create-checkout", async (req, res) => {
-    const { phone, coins, priceInCents, packageId } = req.body;
+    const { phone, coins, priceInCents, packageId, lang } = req.body;
     if (!phone || !coins || !priceInCents || !packageId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -856,8 +1026,8 @@ ${message}`);
         locale,
         allow_promotion_codes: allowPromo,
         billing_address_collection: collectBill ? "required" : "auto",
-        success_url: `${baseUrl}/api/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/api/payment/cancel`,
+        success_url: `${baseUrl}/api/payment/success?session_id={CHECKOUT_SESSION_ID}&lang=${encodeURIComponent(lang || "en")}`,
+        cancel_url: `${baseUrl}/api/payment/cancel?lang=${encodeURIComponent(lang || "en")}`,
         metadata: {
           phone: String(phone),
           coins: coinsStr,
@@ -963,6 +1133,49 @@ ${message}`);
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(PAYMENT_SUCCESS_HTML);
   });
+  app2.post("/api/payment/claim", async (req, res) => {
+    const { session_id, phone } = req.body;
+    if (!session_id || !phone) {
+      return res.status(400).json({ error: "Missing session_id or phone" });
+    }
+    try {
+      const settings = await getStripeSettings();
+      const stripe = buildStripeClient(settings);
+      if (!stripe) return res.status(503).json({ error: "Stripe not configured" });
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      if (session.payment_status !== "paid") {
+        return res.status(402).json({ error: "Payment not completed", status: session.payment_status });
+      }
+      const sessionPhone = session.metadata?.phone;
+      const coins = parseInt(session.metadata?.coins || "0", 10);
+      if (!sessionPhone || sessionPhone !== phone) {
+        return res.status(403).json({ error: "Phone mismatch" });
+      }
+      if (coins <= 0) {
+        return res.status(400).json({ error: "Invalid coins in session" });
+      }
+      const already = await pool.query(
+        "SELECT 1 FROM stripe_sessions WHERE session_id=$1",
+        [session_id]
+      );
+      if (already.rowCount === 0) {
+        await pool.query(
+          "INSERT INTO stripe_sessions(session_id,phone,coins) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",
+          [session_id, phone, coins]
+        );
+        const newBalance = await updateCoins(phone, coins);
+        console.log(`[Payment claim] +${coins} coins \u2192 ${phone}, balance=${newBalance}`);
+        return res.json({ success: true, coinsAdded: coins, newBalance });
+      } else {
+        const currentCoins = await getCoins(phone);
+        console.log(`[Payment claim] session ${session_id} already processed`);
+        return res.json({ success: true, coinsAdded: 0, newBalance: currentCoins, alreadyProcessed: true });
+      }
+    } catch (err) {
+      console.error("[Payment claim] error:", err?.message);
+      return res.status(500).json({ error: err?.message || "Internal error" });
+    }
+  });
   app2.get("/api/payment/cancel", (_req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(PAYMENT_CANCEL_HTML);
@@ -1025,14 +1238,14 @@ ${message}`);
     }
     res.status(404).end();
   });
-  const httpServer = createServer(app2);
+  const httpServer = (0, import_node_http.createServer)(app2);
   return httpServer;
 }
 
 // server/index.ts
-import * as fs from "fs";
-import * as path from "path";
-var app = express();
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+var app = (0, import_express.default)();
 var log = console.log;
 function setupCors(app2) {
   app2.use((req, res, next) => {
@@ -1064,14 +1277,14 @@ function setupCors(app2) {
 }
 function setupBodyParsing(app2) {
   app2.use(
-    express.json({
+    import_express.default.json({
       limit: "10mb",
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       }
     })
   );
-  app2.use(express.urlencoded({ extended: false, limit: "10mb" }));
+  app2.use(import_express.default.urlencoded({ extended: false, limit: "10mb" }));
 }
 function setupRequestLogging(app2) {
   app2.use((req, res, next) => {
@@ -1204,8 +1417,23 @@ function configureExpoAndLanding(app2) {
     }
     next();
   });
-  app2.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
-  app2.use(express.static(path.resolve(process.cwd(), "static-build")));
+  app2.use("/assets", import_express.default.static(path.resolve(process.cwd(), "assets")));
+  app2.use(import_express.default.static(path.resolve(process.cwd(), "static-build")));
+  const legalPages = {
+    "/privacy": "privacy.html",
+    "/terms": "terms.html",
+    "/refund": "refund.html",
+    "/cookies": "cookies.html",
+    "/delete-account": "delete-account.html"
+  };
+  for (const [route, file] of Object.entries(legalPages)) {
+    const filePath = path.resolve(process.cwd(), "server", "templates", file);
+    const html = fs.readFileSync(filePath, "utf-8");
+    app2.get(route, (_req, res) => {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.status(200).send(html);
+    });
+  }
   app2.use((req, res, next) => {
     if (req.path.startsWith("/api")) return next();
     return serveLandingPage({ req, res, landingPageTemplate, appName });
@@ -1227,7 +1455,7 @@ function setupErrorHandler(app2) {
 (async () => {
   setupCors(app);
   app.use(
-    createProxyMiddleware({
+    (0, import_http_proxy_middleware.createProxyMiddleware)({
       pathFilter: "/admin",
       target: "http://localhost:8000",
       changeOrigin: true,
@@ -1242,6 +1470,11 @@ function setupErrorHandler(app2) {
   );
   setupBodyParsing(app);
   setupRequestLogging(app);
+  app.get("/app-ads.txt", (_req, res) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send("google.com, pub-9253457742224170, DIRECT, f08c47fec0942fa0\n");
+  });
   configureExpoAndLanding(app);
   const server = await registerRoutes(app);
   setupErrorHandler(app);

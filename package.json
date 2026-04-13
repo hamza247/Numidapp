@@ -3,14 +3,17 @@
   "main": "expo-router/entry",
   "version": "1.0.1",
   "scripts": {
-  "start": "expo start",
-  "android": "expo run:android",
-  "ios": "expo run:ios",
-  "web": "expo start --web",
-  "build:web": "expo export -p web",
-  "expo:tunnel": "EXPO_PUBLIC_DOMAIN=https://numidapp.co npx expo start --tunnel",
-  "server:dev": "node server.js"
-},
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "build:web": "expo export -p web",
+    "expo:tunnel": "EXPO_PUBLIC_DOMAIN=https://numidapp.co npx expo start --tunnel",
+    "server:dev": "npx tsx server/index.ts",
+    "expo:static:build": "node scripts/build.js",
+    "expo:start:static:build": "npx expo start",
+    "server:build": "npx esbuild server/index.ts --bundle --platform=node --packages=external --outfile=server_dist/index.js"
+  },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.0",
     "@expo/vector-icons": "^15.0.3",
