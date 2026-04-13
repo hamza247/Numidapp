@@ -1,22 +1,21 @@
 <?php
 session_start();
 
-$dbUrl = getenv('DATABASE_URL');
-if ($dbUrl) {
-    $p = parse_url($dbUrl);
-    $host = $p['host'] ?? 'helium';
-    $port = $p['port'] ?? 5432;
-    $dbname = ltrim($p['path'] ?? '/heliumdb', '/');
-    $user = $p['user'] ?? 'postgres';
-    $pass = $p['pass'] ?? 'password';
-    $db = new PDO("pgsql:host={$host};port={$port};dbname={$dbname}", $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-} else {
-    $db = new PDO("pgsql:host=helium;port=5432;dbname=heliumdb", "postgres", "password", [
+$db = new PDO(
+    "pgsql:host=localhost;port=5432;dbname=neondb",
+    "neondb_owner",
+    "Admin123456",
+    [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
-}
+    ]
+);
 
-$db->exec("CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(255) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())");
+$db->exec("CREATE TABLE IF NOT EXISTS app_settings (
+    key VARCHAR(255) PRIMARY KEY,
+    value TEXT,
+    updated_at TIMESTAMP DEFAULT NOW()
+)");
+
 $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
@@ -35,14 +34,19 @@ function getSetting(PDO $db, string $key, string $default = ''): string {
 }
 
 function setSetting(PDO $db, string $key, string $value): void {
-    $stmt = $db->prepare("INSERT INTO app_settings (key, value, updated_at) VALUES (:k, :v, NOW()) ON CONFLICT (key) DO UPDATE SET value = :v2, updated_at = NOW()");
+    $stmt = $db->prepare("
+        INSERT INTO app_settings (key, value, updated_at)
+        VALUES (:k, :v, NOW())
+        ON CONFLICT (key)
+        DO UPDATE SET value = :v2, updated_at = NOW()
+    ");
     $stmt->execute(['k' => $key, 'v' => $value, 'v2' => $value]);
 }
 
 require_once __DIR__ . '/includes/phone-country.php';
 
-$envAdminUser = getenv('ADMIN_USERNAME') ?: 'admin';
-$envAdminPass = getenv('ADMIN_PASSWORD') ?: 'admin123';
+$envAdminUser = '';
+$envAdminPass = '';
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = rtrim($uri, '/') ?: '/admin';

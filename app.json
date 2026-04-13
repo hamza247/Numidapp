@@ -27,7 +27,11 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
+<<<<<<< HEAD
         "backgroundColor": "#00E5FF"
+=======
+        "backgroundColor": "#E8ECF2"
+>>>>>>> a6111e9 (Your descriptive message)
       }
     },
     "web": {
@@ -42,6 +46,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7902ae0f-b58f-4679-8115-997d9a6965bc"
+      }
     }
   }
 }
