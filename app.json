@@ -26,9 +26,7 @@
     },
     "android": {
       "package": "co.numapp.app",
-      "permissions": [
-        "READ_CONTACTS"
-      ],
+      "permissions": ["READ_CONTACTS"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#E8ECF2"
@@ -45,8 +43,8 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+          "androidAppId": "ca-app-pub-9253457742224170~9048378361",
+          "iosAppId": "ca-app-pub-9253457742224170~1705103219"
         }
       ]
     ],
