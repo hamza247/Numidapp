@@ -31,12 +31,14 @@ import { useCoins, FREE_DAILY_SEARCHES, SEARCH_COST } from "@/lib/coins";
 import { useLanguage } from "@/lib/i18n";
 import { incrementSearchCount } from "@/lib/ads";
 import AdBanner from "@/components/AdBanner";
+import ContactConsentSheet from "@/components/ContactConsentSheet";
 
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
 const HISTORY_KEY = "search_history";
 const COUNTRY_KEY = "selected_country";
 const syncedKey = (phone: string) => `contacts_synced_${phone}`;
+const CONSENT_KEY = "contacts_consent_v1";
 
 const defaultCountry = countries[0];
 
@@ -96,6 +98,8 @@ export default function HomeScreen() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loggingIn, setLoggingIn] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showConsentSheet, setShowConsentSheet] = useState(false);
+  const pendingConsentResolve = useRef<((allowed: boolean) => void) | null>(null);
 
   useEffect(() => {
     loadData();
@@ -362,8 +366,35 @@ export default function HomeScreen() {
     }
   }
 
+  function requestContactConsent(): Promise<boolean> {
+    return new Promise((resolve) => {
+      pendingConsentResolve.current = resolve;
+      setShowConsentSheet(true);
+    });
+  }
+
+  function handleConsentAllow() {
+    setShowConsentSheet(false);
+    AsyncStorage.setItem(CONSENT_KEY, "1").catch(() => {});
+    pendingConsentResolve.current?.(true);
+    pendingConsentResolve.current = null;
+  }
+
+  function handleConsentDecline() {
+    setShowConsentSheet(false);
+    pendingConsentResolve.current?.(false);
+    pendingConsentResolve.current = null;
+  }
+
   async function syncContacts() {
     if (syncing) return;
+
+    const consentGiven = await AsyncStorage.getItem(CONSENT_KEY);
+    if (!consentGiven) {
+      const allowed = await requestContactConsent();
+      if (!allowed) return;
+    }
+
     setSyncing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -1105,6 +1136,12 @@ export default function HomeScreen() {
       >
         <Feather name="settings" size={16} color={theme.textMuted} />
       </Pressable>
+
+      <ContactConsentSheet
+        visible={showConsentSheet}
+        onAllow={handleConsentAllow}
+        onDecline={handleConsentDecline}
+      />
     </View>
   );
 }
