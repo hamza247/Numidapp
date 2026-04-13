@@ -212,8 +212,12 @@ export default function StoreScreen() {
       if (Platform.OS === "web") {
         window.open(checkoutUrl, "_blank");
       } else {
-        await WebBrowser.openAuthSessionAsync(checkoutUrl, "whosavedme://");
+        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, "whosavedme://");
         await refreshCoins();
+        if (result.type === "success") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          router.canGoBack() ? router.back() : router.replace("/");
+        }
       }
     } catch (err: any) {
       Alert.alert("Error", err?.message || t.stripeError);
