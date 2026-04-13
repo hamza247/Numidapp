@@ -46,7 +46,8 @@ const PAYMENT_SUCCESS_HTML = `<!DOCTYPE html>
     .close-btn:hover{background:#00b5bf}
   </style>
   <script>
-    function returnToApp(){window.location.href='whosavedme://payment-complete?status=success';}
+    var _sid=(new URLSearchParams(window.location.search)).get('session_id')||'';
+    function returnToApp(){window.location.href='whosavedme://payment-complete?status=success&session_id='+encodeURIComponent(_sid);}
     setTimeout(returnToApp,1500);
     var T={en:{title:"Payment Successful!",msg:"Your coins have been added to your account. Returning to the app\\u2026",badge:"\\ud83d\\udc8e Coins credited",btn:"Return to App"},ar:{title:"\\u062a\\u0645\\u062a \\u0639\\u0645\\u0644\\u064a\\u0629 \\u0627\\u0644\\u062f\\u0641\\u0639 \\u0628\\u0646\\u062c\\u0627\\u062d!",msg:"\\u062a\\u0645\\u062a \\u0625\\u0636\\u0627\\u0641\\u0629 \\u0627\\u0644\\u0639\\u0645\\u0644\\u0627\\u062a \\u0625\\u0644\\u0649 \\u062d\\u0633\\u0627\\u0628\\u0643. \\u062c\\u0627\\u0631\\u064d \\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642\\u2026",badge:"\\ud83d\\udc8e \\u062a\\u0645 \\u0625\\u0636\\u0627\\u0641\\u0629 \\u0627\\u0644\\u0639\\u0645\\u0644\\u0627\\u062a",btn:"\\u0627\\u0644\\u0639\\u0648\\u062f\\u0629 \\u0625\\u0644\\u0649 \\u0627\\u0644\\u062a\\u0637\\u0628\\u064a\\u0642"},fr:{title:"Paiement r\\u00e9ussi !",msg:"Vos pi\\u00e8ces ont \\u00e9t\\u00e9 ajout\\u00e9es \\u00e0 votre compte. Retour \\u00e0 l\\u2019application\\u2026",badge:"\\ud83d\\udc8e Pi\\u00e8ces cr\\u00e9dit\\u00e9es",btn:"Retour \\u00e0 l\\u2019application"}};
     document.addEventListener("DOMContentLoaded",function(){var p=new URLSearchParams(window.location.search);var l=p.get("lang")||"en";var s=T[l]||T.en;document.getElementById("t").textContent=s.title;document.getElementById("m").textContent=s.msg;document.getElementById("b").textContent=s.badge;document.getElementById("btn").textContent=s.btn;if(l==="ar"){document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar");}else if(l==="fr"){document.documentElement.setAttribute("lang","fr");}else{document.documentElement.setAttribute("lang","en");}});
@@ -810,6 +811,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(PAYMENT_SUCCESS_HTML);
+  });
+
+  app.post("/api/payment/claim", async (req: Request, res: Response) => {
+    const { session_id, phone } = req.body as { session_id?: string; phone?: string };
+    if (!session_id || !phone) {
+      return res.status(400).json({ error: "Missing session_id or phone" });
+    }
+    try {
+      const settings = await getStripeSettings();
+      const stripe = buildStripeClient(settings);
+      if (!stripe) return res.status(503).json({ error: "Stripe not configured" });
+
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      if (session.payment_status !== "paid") {
+        return res.status(402).json({ error: "Payment not completed", status: session.payment_status });
+      }
+
+      const sessionPhone = session.metadata?.phone;
+      const coins = parseInt(session.metadata?.coins || "0", 10);
+
+      if (!sessionPhone || sessionPhone !== phone) {
+        return res.status(403).json({ error: "Phone mismatch" });
+      }
+      if (coins <= 0) {
+        return res.status(400).json({ error: "Invalid coins in session" });
+      }
+
+      const already = await pool.query(
+        "SELECT 1 FROM stripe_sessions WHERE session_id=$1",
+        [session_id]
+      );
+      if (already.rowCount === 0) {
+        await pool.query(
+          "INSERT INTO stripe_sessions(session_id,phone,coins) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",
+          [session_id, phone, coins]
+        );
+        const newBalance = await updateCoins(phone, coins);
+        console.log(`[Payment claim] +${coins} coins → ${phone}, balance=${newBalance}`);
+        return res.json({ success: true, coinsAdded: coins, newBalance });
+      } else {
+        const currentCoins = await getCoins(phone);
+        console.log(`[Payment claim] session ${session_id} already processed`);
+        return res.json({ success: true, coinsAdded: 0, newBalance: currentCoins, alreadyProcessed: true });
+      }
+    } catch (err: any) {
+      console.error("[Payment claim] error:", err?.message);
+      return res.status(500).json({ error: err?.message || "Internal error" });
+    }
   });
 
   app.get("/api/payment/cancel", (_req: Request, res: Response) => {

@@ -213,10 +213,35 @@ export default function StoreScreen() {
         window.open(checkoutUrl, "_blank");
       } else {
         const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, "whosavedme://");
-        await refreshCoins();
         if (result.type === "success") {
+          const redirectUrl = (result as any).url as string | undefined;
+          const sessionId = redirectUrl
+            ? new URLSearchParams(redirectUrl.split("?")[1] ?? "").get("session_id")
+            : null;
+
+          if (sessionId && phone) {
+            try {
+              const base = getApiUrl();
+              const claimRes = await fetch(`${base}api/payment/claim`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ session_id: sessionId, phone }),
+                credentials: "include",
+              });
+              const claimData = await claimRes.json().catch(() => ({})) as any;
+              if (claimRes.ok && claimData.coinsAdded > 0) {
+                console.log(`[Payment] +${claimData.coinsAdded} coins credited, balance=${claimData.newBalance}`);
+              }
+            } catch (claimErr) {
+              console.warn("[Payment] claim endpoint error:", claimErr);
+            }
+          }
+
+          await refreshCoins();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.canGoBack() ? router.back() : router.replace("/");
+        } else {
+          await refreshCoins();
         }
       }
     } catch (err: any) {
