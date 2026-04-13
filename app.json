@@ -2,10 +2,14 @@
   "expo": {
     "name": "numidapp caller",
     "slug": "numidapp-caller",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+<<<<<<< HEAD
     "scheme": ["numidapp", "whosavedme"],
+=======
+    "scheme": "numidapp-callerp",
+>>>>>>> 1e254db (update app config)
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -27,11 +31,7 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-<<<<<<< HEAD
-        "backgroundColor": "#00E5FF"
-=======
         "backgroundColor": "#E8ECF2"
->>>>>>> a6111e9 (Your descriptive message)
       }
     },
     "web": {
@@ -50,8 +50,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7902ae0f-b58f-4679-8115-997d9a6965bc"
+        "projectId": "c3bdb52a-36de-479e-a9ed-8b2007489e85"
       }
-    }
+    },
+    "owner": "hamzamassaoui"
   }
 }
