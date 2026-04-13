@@ -25,6 +25,15 @@ import { Ionicons } from "@expo/vector-icons";
 
 SplashScreen.preventAutoHideAsync();
 
+if (Platform.OS !== "web") {
+  try {
+    const { default: MobileAds } = require("react-native-google-mobile-ads") as {
+      default: () => { initialize(): Promise<unknown> };
+    };
+    MobileAds().initialize().catch(() => {});
+  } catch {}
+}
+
 function MaintenanceScreen({ onRetry }: { onRetry: () => void }) {
   const insets = useSafeAreaInsets();
   const { t, fonts } = useLanguage();

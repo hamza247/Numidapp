@@ -1,4 +1,4 @@
-import React, { useState, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import {
   View,
   Image,
@@ -14,9 +14,10 @@ interface AdMobModule {
   BannerAd: React.ComponentType<{
     unitId: string;
     size: string;
-    onAdFailedToLoad?: () => void;
+    onAdLoaded?: () => void;
+    onAdFailedToLoad?: (error: unknown) => void;
   }>;
-  BannerAdSize: { ANCHORED_ADAPTIVE_BANNER: string };
+  BannerAdSize: { ANCHORED_ADAPTIVE_BANNER: string; BANNER: string };
   TestIds: { BANNER: string };
 }
 
@@ -40,8 +41,22 @@ export default function AdBanner() {
     queryKey: ["/api/app-settings"],
   });
 
+  const [retryKey, setRetryKey] = useState(0);
   const [admobFailed, setAdmobFailed] = useState(false);
   const searchCount = useSearchCount();
+
+  const handleAdFailure = useCallback(() => {
+    setAdmobFailed(true);
+  }, []);
+
+  useEffect(() => {
+    if (!admobFailed) return;
+    const timer = setTimeout(() => {
+      setAdmobFailed(false);
+      setRetryKey((k) => k + 1);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [admobFailed]);
 
   if (!settings) return null;
   if (settings.ads_enabled !== "1") return null;
@@ -54,11 +69,13 @@ export default function AdBanner() {
   const wantsAdmob = provider === "admob";
   const canUseAdmob = wantsAdmob && admobModule !== null && !admobFailed && Platform.OS !== "web";
 
-  const hasAdmobUnitId = canUseAdmob && (
-    Platform.OS === "ios"
-      ? !!(settings.admob_banner_ios || admobModule?.TestIds.BANNER)
-      : !!(settings.admob_banner_android || admobModule?.TestIds.BANNER)
-  );
+  const unitId = canUseAdmob
+    ? Platform.OS === "ios"
+      ? settings.admob_banner_ios || admobModule!.TestIds.BANNER
+      : settings.admob_banner_android || admobModule!.TestIds.BANNER
+    : null;
+
+  const hasAdmobUnitId = canUseAdmob && !!unitId;
   const hasCustom = !!customUrl;
 
   const willRender = hasAdmobUnitId || hasCustom;
@@ -66,18 +83,14 @@ export default function AdBanner() {
 
   if (!shouldShowAd(frequency, searchCount)) return null;
 
-  if (hasAdmobUnitId && admobModule) {
-    const unitId =
-      Platform.OS === "ios"
-        ? settings.admob_banner_ios || admobModule.TestIds.BANNER
-        : settings.admob_banner_android || admobModule.TestIds.BANNER;
-
+  if (hasAdmobUnitId && admobModule && unitId) {
     return (
       <View style={styles.container}>
         <admobModule.BannerAd
+          key={retryKey}
           unitId={unitId}
-          size={admobModule.BannerAdSize.ANCHORED_ADAPTIVE_BANNER || "BANNER"}
-          onAdFailedToLoad={() => setAdmobFailed(true)}
+          size={admobModule.BannerAdSize.ANCHORED_ADAPTIVE_BANNER || admobModule.BannerAdSize.BANNER || "BANNER"}
+          onAdFailedToLoad={handleAdFailure}
         />
       </View>
     );
@@ -108,6 +121,7 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 20,
     paddingVertical: 8,
+    alignItems: "center",
   },
   bannerImage: {
     width: "100%",

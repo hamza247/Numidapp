@@ -87,9 +87,13 @@ ob_start();
     </div>
 
     <div class="bg-[#0F1623] border border-white/5 rounded-2xl p-5 mb-5">
-        <h2 class="text-sm font-semibold text-white mb-4">AdMob Configuration</h2>
+        <h2 class="text-sm font-semibold text-white mb-2">AdMob Configuration</h2>
+        <div class="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <p class="text-xs text-amber-400 font-semibold mb-1">⚠ Important — App IDs require a native rebuild</p>
+            <p class="text-xs text-gray-400">AdMob App IDs (below) must be set in <code class="text-teal-400">app.json</code> at build time — they cannot be changed at runtime. Banner/Interstitial/Rewarded unit IDs are loaded from this panel at runtime and can be updated without a rebuild.</p>
+        </div>
         <div class="mb-4">
-            <label class="block text-xs text-gray-500 mb-1.5">AdMob App ID</label>
+            <label class="block text-xs text-gray-500 mb-1.5">AdMob App ID (reference — also update app.json)</label>
             <input type="text" name="admob_app_id" value="<?= htmlspecialchars($admobAppId) ?>" placeholder="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy"
                 class="w-full bg-[#080C14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#00C9D4]/50 font-mono text-xs">
         </div>
