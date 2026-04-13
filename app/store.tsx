@@ -213,7 +213,7 @@ export default function StoreScreen() {
         window.open(checkoutUrl, "_blank");
       } else {
         const coinsBeforePayment = coins;
-        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, "numidapp://");
+        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, "numidapp-caller://");
 
         const redirectUrl = result.type === "success" ? (result as any).url as string | undefined : undefined;
         const sessionId = redirectUrl
