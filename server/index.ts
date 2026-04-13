@@ -314,6 +314,12 @@ function setupErrorHandler(app: express.Application) {
   setupBodyParsing(app);
   setupRequestLogging(app);
 
+  app.get("/app-ads.txt", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send("google.com, pub-9253457742224170, DIRECT, f08c47fec0942fa0\n");
+  });
+
   configureExpoAndLanding(app);
 
   const server = await registerRoutes(app);
