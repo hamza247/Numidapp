@@ -15,13 +15,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "co.numapp.app",
+      "bundleIdentifier": "com.numidappcaller.app",
       "infoPlist": {
         "NSContactsUsageDescription": "numidapp caller uses your contacts only to show you which of your saved contacts are on the app. Your contact data is never shared with third parties or stored without your consent."
       }
     },
     "android": {
-      "package": "co.numapp.app",
+      "package": "com.numidappcaller.app",
       "permissions": ["READ_CONTACTS"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
