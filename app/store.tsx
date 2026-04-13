@@ -212,36 +212,37 @@ export default function StoreScreen() {
       if (Platform.OS === "web") {
         window.open(checkoutUrl, "_blank");
       } else {
-        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, "whosavedme://");
-        if (result.type === "success") {
-          const redirectUrl = (result as any).url as string | undefined;
-          const sessionId = redirectUrl
-            ? new URLSearchParams(redirectUrl.split("?")[1] ?? "").get("session_id")
-            : null;
+        const coinsBeforePayment = coins;
+        const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, "numidapp://");
 
-          if (sessionId && phone) {
-            try {
-              const base = getApiUrl();
-              const claimRes = await fetch(`${base}api/payment/claim`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ session_id: sessionId, phone }),
-                credentials: "include",
-              });
-              const claimData = await claimRes.json().catch(() => ({})) as any;
-              if (claimRes.ok && claimData.coinsAdded > 0) {
-                console.log(`[Payment] +${claimData.coinsAdded} coins credited, balance=${claimData.newBalance}`);
-              }
-            } catch (claimErr) {
-              console.warn("[Payment] claim endpoint error:", claimErr);
-            }
+        const redirectUrl = result.type === "success" ? (result as any).url as string | undefined : undefined;
+        const sessionId = redirectUrl
+          ? new URLSearchParams(redirectUrl.split("?")[1] ?? "").get("session_id")
+          : null;
+
+        if (sessionId && phone) {
+          try {
+            const base = getApiUrl();
+            const claimRes = await fetch(`${base}api/payment/claim`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ session_id: sessionId, phone }),
+              credentials: "include",
+            });
+            const claimData = await claimRes.json().catch(() => ({})) as any;
+            console.log(`[Payment] claim result: coinsAdded=${claimData.coinsAdded}, balance=${claimData.newBalance}`);
+          } catch (claimErr) {
+            console.warn("[Payment] claim endpoint error:", claimErr);
           }
+        }
 
-          await refreshCoins();
+        await refreshCoins();
+
+        if (result.type === "success") {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.canGoBack() ? router.back() : router.replace("/");
-        } else {
-          await refreshCoins();
+        } else if (coins > coinsBeforePayment) {
+          router.canGoBack() ? router.back() : router.replace("/");
         }
       }
     } catch (err: any) {
