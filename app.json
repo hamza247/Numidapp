@@ -5,11 +5,7 @@
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-<<<<<<< HEAD
-    "scheme": ["numidapp", "whosavedme"],
-=======
-    "scheme": "numidapp-callerp",
->>>>>>> 1e254db (update app config)
+    "scheme": ["numidapp-caller"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
