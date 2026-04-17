@@ -1,35 +1,54 @@
 <?php
 session_start();
 
-$databaseUrl = getenv('DATABASE_URL');
-if (!$databaseUrl) {
-    http_response_code(500);
-    die('<h2>Configuration error</h2><p>DATABASE_URL environment variable is not set.</p>');
-}
-$parsed = parse_url($databaseUrl);
-$dbHost   = $parsed['host'] ?? 'localhost';
-$dbPort   = $parsed['port'] ?? 5432;
-$dbName   = ltrim($parsed['path'] ?? '/postgres', '/');
-$dbUser   = urldecode($parsed['user'] ?? '');
-$dbPass   = urldecode($parsed['pass'] ?? '');
+// Prefer Replit's individual PG* variables (always correct, even if DATABASE_URL is overridden).
+// Fall back to parsing DATABASE_URL only when PG* vars are absent.
+$dbHost = getenv('PGHOST')  ?: null;
+$dbPort = getenv('PGPORT')  ?: null;
+$dbName = getenv('PGDATABASE') ?: null;
+$dbUser = getenv('PGUSER')  ?: null;
+$dbPass = getenv('PGPASSWORD') ?: null;
 
-// Only add sslmode if explicitly present in the URL; otherwise let the driver decide
+if (!$dbHost || !$dbUser) {
+    // Fall back to DATABASE_URL
+    $databaseUrl = getenv('DATABASE_URL');
+    if (!$databaseUrl) {
+        http_response_code(500);
+        die('<h2>Configuration error</h2><p>Neither PG* variables nor DATABASE_URL are set.</p>');
+    }
+    $parsed = parse_url($databaseUrl);
+    $dbHost = $dbHost ?: ($parsed['host'] ?? 'localhost');
+    $dbPort = $dbPort ?: ($parsed['port'] ?? 5432);
+    $dbName = $dbName ?: ltrim($parsed['path'] ?? '/postgres', '/');
+    $dbUser = $dbUser ?: urldecode($parsed['user'] ?? '');
+    $dbPass = $dbPass ?? urldecode($parsed['pass'] ?? '');
+}
+
+$dbPort = $dbPort ?: 5432;
+$dbName = $dbName ?: 'postgres';
+
+// Detect sslmode from DATABASE_URL query string if present
 $sslPart = '';
-if (!empty($parsed['query'])) {
-    parse_str($parsed['query'], $qp);
-    if (!empty($qp['sslmode'])) {
-        $sslPart = ";sslmode={$qp['sslmode']}";
+$databaseUrl = $databaseUrl ?? getenv('DATABASE_URL');
+if ($databaseUrl) {
+    $parsedUrl = parse_url($databaseUrl);
+    if (!empty($parsedUrl['query'])) {
+        parse_str($parsedUrl['query'], $qp);
+        if (!empty($qp['sslmode']) && $qp['sslmode'] !== 'disable') {
+            $sslPart = ";sslmode={$qp['sslmode']}";
+        }
     }
 }
+
 $dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName}{$sslPart}";
 
 try {
     $db = new PDO($dsn, $dbUser, $dbPass, [
-        PDO::ATTR_ERRMODE      => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_TIMEOUT      => 10,
+        PDO::ATTR_ERRMODE  => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT  => 10,
     ]);
 } catch (PDOException $e) {
-    // Try again without SSL in case the first attempt used an incompatible mode
+    // Retry without SSL restriction
     try {
         $dsnNoSsl = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName};sslmode=disable";
         $db = new PDO($dsnNoSsl, $dbUser, $dbPass, [
