@@ -32,6 +32,7 @@ import { useLanguage } from "@/lib/i18n";
 import { incrementSearchCount } from "@/lib/ads";
 import AdBanner from "@/components/AdBanner";
 import ContactConsentSheet from "@/components/ContactConsentSheet";
+import RewardedAdButton from "@/components/RewardedAdButton";
 
 const PHONE_KEY = "user_phone";
 const NAME_KEY = "user_name";
@@ -1031,6 +1032,17 @@ export default function HomeScreen() {
                 : t.useCoin}
             </Text>
           </View>
+          {freeSearchesRemaining <= 0 && (
+            <RewardedAdButton
+              phone={userPhone}
+              onCoinsEarned={() => refreshCoins()}
+              label={t.watchAdForCoins}
+              notAvailableLabel={t.adNotAvailable}
+              loadingLabel={t.adLoading}
+              onEarnedLabel={t.adEarned}
+              fontFamily={fonts.medium}
+            />
+          )}
         </Animated.View>
 
         {!synced && (

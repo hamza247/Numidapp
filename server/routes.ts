@@ -493,6 +493,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/coins/rewarded-ad", async (req: Request, res: Response) => {
+    const { phone } = req.body;
+    if (!phone || typeof phone !== "string" || phone.length < 7) {
+      return res.status(400).json({ error: "Invalid phone" });
+    }
+    try {
+      const result = await pool.query("SELECT value FROM app_settings WHERE key = 'rewarded_coin_amount'");
+      const earned = result.rows.length ? (parseInt(result.rows[0].value, 10) || 3) : 3;
+      const coins = await updateCoins(phone, earned);
+      return res.json({ coins, earned });
+    } catch (err) {
+      console.error("Rewarded ad coins error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
   const DEFAULT_COIN_PACKAGES = [
     { id: "starter",  coins: 5,   price: 0.99,  label: "",            popular: false, bestValue: false, enabled: true },
     { id: "basic",    coins: 15,  price: 1.99,  label: "save33",      popular: false, bestValue: false, enabled: true },
