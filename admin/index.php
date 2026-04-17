@@ -1,14 +1,26 @@
 <?php
 session_start();
 
-$db = new PDO(
-    "pgsql:host=localhost;port=5432;dbname=neondb",
-    "neondb_owner",
-    "Admin123456",
-    [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]
-);
+$databaseUrl = getenv('DATABASE_URL');
+if (!$databaseUrl) {
+    die('DATABASE_URL environment variable is not set.');
+}
+$parsed = parse_url($databaseUrl);
+$dbHost   = $parsed['host'] ?? 'localhost';
+$dbPort   = $parsed['port'] ?? 5432;
+$dbName   = ltrim($parsed['path'] ?? '/neondb', '/');
+$dbUser   = urldecode($parsed['user'] ?? '');
+$dbPass   = urldecode($parsed['pass'] ?? '');
+$sslMode  = 'require';
+if (!empty($parsed['query'])) {
+    parse_str($parsed['query'], $qp);
+    if (!empty($qp['sslmode'])) $sslMode = $qp['sslmode'];
+}
+$dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName};sslmode={$sslMode}";
+
+$db = new PDO($dsn, $dbUser, $dbPass, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+]);
 
 $db->exec("CREATE TABLE IF NOT EXISTS app_settings (
     key VARCHAR(255) PRIMARY KEY,
