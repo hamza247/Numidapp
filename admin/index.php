@@ -3,11 +3,11 @@ session_start();
 
 // Prefer Replit's individual PG* variables (always correct, even if DATABASE_URL is overridden).
 // Fall back to parsing DATABASE_URL only when PG* vars are absent.
-$dbHost = getenv('PGHOST')  ?: null;
-$dbPort = getenv('PGPORT')  ?: null;
-$dbName = getenv('PGDATABASE') ?: null;
-$dbUser = getenv('PGUSER')  ?: null;
-$dbPass = getenv('PGPASSWORD') ?: null;
+$dbHost = getenv('PGHOST')  ?: "localhost";
+$dbPort = getenv('PGPORT')  ?: 5000;
+$dbName = getenv('PGDATABASE') ?: "neondb";
+$dbUser = getenv('PGUSER')  ?: "neondb_owner";
+$dbPass = getenv('PGPASSWORD') ?: "Admin123456";
 
 if (!$dbHost || !$dbUser) {
     // Fall back to DATABASE_URL
