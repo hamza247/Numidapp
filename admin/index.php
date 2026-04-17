@@ -1,81 +1,80 @@
 <?php
 session_start();
 
-// Load .env file from the project root (one level up from admin/).
-// Values from .env are applied only when the variable isn't already set in
-// the real environment, so Replit's runtime-managed vars still win in production.
+// ── Load .env from project root ──────────────────────────────────────────────
 $envFile = __DIR__ . '/../.env';
 if (is_readable($envFile)) {
     foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
         $line = trim($line);
         if ($line === '' || $line[0] === '#') continue;
         if (!str_contains($line, '=')) continue;
-        [$key, $val] = explode('=', $line, 2);
-        $key = trim($key);
-        $val = trim(trim($val), '"\'');
-        if ($key !== '' && getenv($key) === false) {
-            putenv("$key=$val");
-        }
+        [$k, $v] = explode('=', $line, 2);
+        $k = trim($k);
+        $v = trim(trim($v), '"\'');
+        if ($k !== '') putenv("$k=$v");
     }
 }
 
-// Priority: real env vars (Replit-managed PG* or .env-loaded DATABASE_URL).
-$dbHost = getenv('PGHOST')  ?: null;
-$dbPort = getenv('PGPORT')  ?: null;
-$dbName = getenv('PGDATABASE') ?: null;
-$dbUser = getenv('PGUSER')  ?: null;
-$dbPass = getenv('PGPASSWORD') ?: null;
-
-if (!$dbHost || !$dbUser) {
-    // Fall back to DATABASE_URL
-    $databaseUrl = getenv('DATABASE_URL');
-    if (!$databaseUrl) {
-        http_response_code(500);
-        die('<h2>Configuration error</h2><p>Neither PG* variables nor DATABASE_URL are set.</p>');
-    }
-    $parsed = parse_url($databaseUrl);
-    $dbHost = $dbHost ?: ($parsed['host'] ?? 'localhost');
-    $dbPort = $dbPort ?: ($parsed['port'] ?? 5432);
-    $dbName = $dbName ?: ltrim($parsed['path'] ?? '/postgres', '/');
-    $dbUser = $dbUser ?: urldecode($parsed['user'] ?? '');
-    $dbPass = $dbPass ?? urldecode($parsed['pass'] ?? '');
+// ── Connect using DATABASE_URL ────────────────────────────────────────────────
+// .env is loaded above; getenv() now returns the .env value if set there.
+// If .env is absent (e.g. dev), Replit's managed DATABASE_URL is used instead.
+$databaseUrl = getenv('DATABASE_URL');
+if (!$databaseUrl) {
+    http_response_code(500);
+    die('<h2>Configuration error</h2><p>DATABASE_URL is not set. Add it to your .env file.</p>');
 }
 
-$dbPort = $dbPort ?: 5432;
-$dbName = $dbName ?: 'postgres';
-
-// Detect sslmode from DATABASE_URL query string if present
-$sslPart = '';
-$databaseUrl = $databaseUrl ?? getenv('DATABASE_URL');
-if ($databaseUrl) {
-    $parsedUrl = parse_url($databaseUrl);
-    if (!empty($parsedUrl['query'])) {
-        parse_str($parsedUrl['query'], $qp);
+function buildDsn(string $url): array {
+    $p = parse_url($url);
+    $host   = $p['host'] ?? 'localhost';
+    $port   = $p['port'] ?? 5432;
+    $dbname = ltrim($p['path'] ?? '/postgres', '/');
+    $user   = urldecode($p['user'] ?? '');
+    $pass   = urldecode($p['pass'] ?? '');
+    $ssl    = '';
+    if (!empty($p['query'])) {
+        parse_str($p['query'], $qp);
         if (!empty($qp['sslmode']) && $qp['sslmode'] !== 'disable') {
-            $sslPart = ";sslmode={$qp['sslmode']}";
+            $ssl = ";sslmode={$qp['sslmode']}";
         }
+    }
+    $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}{$ssl}";
+    return [$dsn, $user, $pass];
+}
+
+[$dsn, $dbUser, $dbPass] = buildDsn($databaseUrl);
+
+$db = null;
+$lastError = '';
+
+// Try primary URL (from .env)
+try {
+    $db = new PDO($dsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 10]);
+} catch (PDOException $e) {
+    $lastError = $e->getMessage();
+}
+
+// If primary failed and we have PGHOST set (Replit dev fallback), try that
+if (!$db && getenv('PGHOST') && getenv('PGHOST') !== 'localhost') {
+    $devUrl = sprintf(
+        'postgresql://%s:%s@%s:%s/%s',
+        getenv('PGUSER') ?: 'postgres',
+        getenv('PGPASSWORD') ?: '',
+        getenv('PGHOST'),
+        getenv('PGPORT') ?: 5432,
+        getenv('PGDATABASE') ?: 'postgres'
+    );
+    [$dsnDev, $devUser, $devPass] = buildDsn($devUrl);
+    try {
+        $db = new PDO($dsnDev, $devUser, $devPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 10]);
+    } catch (PDOException $e2) {
+        $lastError = $e2->getMessage();
     }
 }
 
-$dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName}{$sslPart}";
-
-try {
-    $db = new PDO($dsn, $dbUser, $dbPass, [
-        PDO::ATTR_ERRMODE  => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_TIMEOUT  => 10,
-    ]);
-} catch (PDOException $e) {
-    // Retry without SSL restriction
-    try {
-        $dsnNoSsl = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName};sslmode=disable";
-        $db = new PDO($dsnNoSsl, $dbUser, $dbPass, [
-            PDO::ATTR_ERRMODE  => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_TIMEOUT  => 10,
-        ]);
-    } catch (PDOException $e2) {
-        http_response_code(500);
-        die('<h2>Database connection failed</h2><pre>' . htmlspecialchars($e2->getMessage()) . '</pre>');
-    }
+if (!$db) {
+    http_response_code(500);
+    die('<h2>Database connection failed</h2><p>Check DATABASE_URL in your .env file.</p><pre>' . htmlspecialchars($lastError) . '</pre>');
 }
 
 $db->exec("CREATE TABLE IF NOT EXISTS app_settings (
