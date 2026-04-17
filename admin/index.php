@@ -3,24 +3,44 @@ session_start();
 
 $databaseUrl = getenv('DATABASE_URL');
 if (!$databaseUrl) {
-    die('DATABASE_URL environment variable is not set.');
+    http_response_code(500);
+    die('<h2>Configuration error</h2><p>DATABASE_URL environment variable is not set.</p>');
 }
 $parsed = parse_url($databaseUrl);
 $dbHost   = $parsed['host'] ?? 'localhost';
 $dbPort   = $parsed['port'] ?? 5432;
-$dbName   = ltrim($parsed['path'] ?? '/neondb', '/');
+$dbName   = ltrim($parsed['path'] ?? '/postgres', '/');
 $dbUser   = urldecode($parsed['user'] ?? '');
 $dbPass   = urldecode($parsed['pass'] ?? '');
-$sslMode  = 'require';
+
+// Only add sslmode if explicitly present in the URL; otherwise let the driver decide
+$sslPart = '';
 if (!empty($parsed['query'])) {
     parse_str($parsed['query'], $qp);
-    if (!empty($qp['sslmode'])) $sslMode = $qp['sslmode'];
+    if (!empty($qp['sslmode'])) {
+        $sslPart = ";sslmode={$qp['sslmode']}";
+    }
 }
-$dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName};sslmode={$sslMode}";
+$dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName}{$sslPart}";
 
-$db = new PDO($dsn, $dbUser, $dbPass, [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-]);
+try {
+    $db = new PDO($dsn, $dbUser, $dbPass, [
+        PDO::ATTR_ERRMODE      => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT      => 10,
+    ]);
+} catch (PDOException $e) {
+    // Try again without SSL in case the first attempt used an incompatible mode
+    try {
+        $dsnNoSsl = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName};sslmode=disable";
+        $db = new PDO($dsnNoSsl, $dbUser, $dbPass, [
+            PDO::ATTR_ERRMODE  => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT  => 10,
+        ]);
+    } catch (PDOException $e2) {
+        http_response_code(500);
+        die('<h2>Database connection failed</h2><pre>' . htmlspecialchars($e2->getMessage()) . '</pre>');
+    }
+}
 
 $db->exec("CREATE TABLE IF NOT EXISTS app_settings (
     key VARCHAR(255) PRIMARY KEY,
