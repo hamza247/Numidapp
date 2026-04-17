@@ -1,7 +1,7 @@
 import { ExpoConfig, ConfigContext } from "expo/config";
 
-const ADMOB_ANDROID_APP_ID_TEST = "ca-app-pub-3940256099942544~3347511713";
-const ADMOB_IOS_APP_ID_TEST = "ca-app-pub-3940256099942544~1458002511";
+const ADMOB_ANDROID_APP_ID_TEST = "ca-app-pub-9253457742224170~9048378361";
+const ADMOB_IOS_APP_ID_TEST = "ca-app-pub-9253457742224170~1705103219";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const androidAppId =
