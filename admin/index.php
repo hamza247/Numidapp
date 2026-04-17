@@ -1,13 +1,30 @@
 <?php
 session_start();
 
-// Prefer Replit's individual PG* variables (always correct, even if DATABASE_URL is overridden).
-// Fall back to parsing DATABASE_URL only when PG* vars are absent.
-$dbHost = getenv('PGHOST')  ?: "localhost";
-$dbPort = getenv('PGPORT')  ?: 5000;
-$dbName = getenv('PGDATABASE') ?: "neondb";
-$dbUser = getenv('PGUSER')  ?: "neondb_owner";
-$dbPass = getenv('PGPASSWORD') ?: "Admin123456";
+// Load .env file from the project root (one level up from admin/).
+// Values from .env are applied only when the variable isn't already set in
+// the real environment, so Replit's runtime-managed vars still win in production.
+$envFile = __DIR__ . '/../.env';
+if (is_readable($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#') continue;
+        if (!str_contains($line, '=')) continue;
+        [$key, $val] = explode('=', $line, 2);
+        $key = trim($key);
+        $val = trim(trim($val), '"\'');
+        if ($key !== '' && getenv($key) === false) {
+            putenv("$key=$val");
+        }
+    }
+}
+
+// Priority: real env vars (Replit-managed PG* or .env-loaded DATABASE_URL).
+$dbHost = getenv('PGHOST')  ?: null;
+$dbPort = getenv('PGPORT')  ?: null;
+$dbName = getenv('PGDATABASE') ?: null;
+$dbUser = getenv('PGUSER')  ?: null;
+$dbPass = getenv('PGPASSWORD') ?: null;
 
 if (!$dbHost || !$dbUser) {
     // Fall back to DATABASE_URL
