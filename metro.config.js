@@ -25,7 +25,8 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
 // Exclude Replit's internal temp skill directories from file watching.
 // These are transient dirs created/deleted by Replit that crash Metro's watcher.
 const { blockList } = config.resolver;
-const extraBlocks = [/\.local[\\/]skills[\\/]\.old-/];
+// Block .old-* and .tmp-* transient dirs Replit creates inside .local/skills/
+const extraBlocks = [/\.local[\\/]skills[\\/]\.(old|tmp)-/];
 config.resolver.blockList = blockList
   ? Array.isArray(blockList)
     ? [...blockList, ...extraBlocks]

@@ -8,6 +8,69 @@ import { isValidInternationalPhone } from "./phoneUtils";
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool);
 
+export async function initializeDatabase(): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS profiles (
+      id SERIAL PRIMARY KEY,
+      full_name VARCHAR(100) NOT NULL,
+      phone VARCHAR(20) NOT NULL UNIQUE,
+      country_code VARCHAR(5) NOT NULL,
+      password_hash TEXT,
+      coins INTEGER NOT NULL DEFAULT 5,
+      avatar_base64 TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS contacts (
+      id SERIAL PRIMARY KEY,
+      uploader_phone VARCHAR(20) NOT NULL,
+      stored_number VARCHAR(20) NOT NULL,
+      stored_name VARCHAR(255) NOT NULL,
+      label VARCHAR(100) DEFAULT 'mobile',
+      is_valid_international BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW(),
+      CONSTRAINT idx_uploader_stored UNIQUE (uploader_phone, stored_number)
+    );
+    CREATE INDEX IF NOT EXISTS idx_stored_number ON contacts (stored_number);
+
+    CREATE TABLE IF NOT EXISTS phone_verifications (
+      id SERIAL PRIMARY KEY,
+      phone VARCHAR(20) NOT NULL,
+      code VARCHAR(6) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      verified BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS removed_numbers (
+      phone VARCHAR(20) PRIMARY KEY,
+      removed_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS stripe_sessions (
+      session_id TEXT PRIMARY KEY,
+      phone VARCHAR(20),
+      coins INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id SERIAL PRIMARY KEY,
+      sender_email VARCHAR(255),
+      message TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+  console.log("[DB] Tables initialized");
+}
+
 export async function upsertContacts(items: InsertContact[]): Promise<number> {
   if (items.length === 0) return 0;
 
